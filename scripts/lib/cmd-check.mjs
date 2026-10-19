@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  UsageError, atomicWrite, output, parseCommandArgs, resolveFeatureForWrite, resolveProjectRoot,
+  UsageError, atomicWrite, mainWorktreeRoot, output, parseCommandArgs, resolveFeatureForWrite, resolveProjectRoot,
 } from './core.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { appendHistory } from './history.mjs';
@@ -198,6 +198,7 @@ export async function run(argv, ctx, { runStep = defaultRunStep, detect = detect
   const timeout_s = positiveInt('timeout', values.timeout, { min: 1 }) ?? DEFAULT_TIMEOUT_S;
 
   const root = resolveProjectRoot(ctx);
+  const isLinkedWorktree = mainWorktreeRoot(root) !== root;
   const files = normalizeFiles(values.files ?? [], root);
   if (scope === 'touched' && files.length === 0) throw new UsageError(`--files is required for --scope touched (usage: dev-cycle ${USAGE})`);
 
@@ -265,7 +266,10 @@ export async function run(argv, ctx, { runStep = defaultRunStep, detect = detect
           entry.touched_failures = g.touched.length;
           entry.elsewhere_failures = g.elsewhere.length;
           text.push(`failures in touched files (${g.touched.length})`, ...g.touched.map((b) => b.text));
-          text.push(`failures elsewhere — possibly in-flight sibling edits (${g.elsewhere.length})`, ...g.elsewhere.map((b) => b.text));
+          const elsewhereLabel = isLinkedWorktree
+            ? `failures elsewhere (not a sibling: isolated worktree) (${g.elsewhere.length})`
+            : `failures elsewhere — possibly in-flight sibling edits (${g.elsewhere.length})`;
+          text.push(elsewhereLabel, ...g.elsewhere.map((b) => b.text));
           entry.tail = blocks.map((b) => b.text).join('\n');
         } else {
           entry.tail = blocks.map((b) => b.text).join('\n');

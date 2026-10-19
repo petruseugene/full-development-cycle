@@ -69,6 +69,7 @@ How the orchestrator runs one group (and the end-of-feature gates):
    globs, and the constraints: edit only files inside `Touches:` (report
    anything else under `touches_expanded:`), and never run `git stash`,
    `git checkout`, `git reset` or `git commit` in the shared working tree.
+   With `worktrees.mode != off`, see `worktrees.md` (start before, collect after).
 3. Wait for every report in the group before starting the next group.
    Never interrupt, cancel or re-dispatch an in-flight sibling because
    another one finished or failed; handle failures after the group ends.

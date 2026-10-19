@@ -229,3 +229,11 @@ test('cost-cuts AC33: lifecycle and orchestrator shrink limits; new verbs and ru
   }
   assert.ok(rd('skills/orchestrator/references/recipes.md').includes('## Grammar'));
 });
+
+test('worktree-isolation AC24: worktrees.md exists, is complete and is referenced', () => {
+  const w = rd('skills/orchestrator/references/worktrees.md');
+  for (const k of ['worktree start', 'worktree collect', 'worktree remove --all', 'stray']) {
+    assert.ok(w.includes(k), k);
+  }
+  assert.ok(rd('skills/orchestrator/SKILL.md').includes('references/worktrees.md'));
+});

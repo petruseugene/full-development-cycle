@@ -13,11 +13,11 @@ NOT for: quick one-liner edits, pure research / Q&A, step-by-step pair-coding.
 
 ## Required reading
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` (the playbook core) before anything else; `${CLAUDE_PLUGIN_ROOT}` is the plugin root given on the `Plugin root:` line below (the orchestrator has no dispatch prompt).
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` (the playbook core) first; `${CLAUDE_PLUGIN_ROOT}` is the plugin root on the `Plugin root:` line below.
 2. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/references/lifecycle.md` (§1, §1a, Bugfix flow, §1c, §4, §5, §7, §9, §10). "Playbook §1/§1a/§4/§5/§7/§9/§10" here and in the references mean this file; §2/§3/§6/§8 mean the core.
-3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `release.md` (`ship --release`), `recipes.md` (profile recipes)
+3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `worktrees.md` (`worktrees.mode != off`), `release.md` (`ship --release`), `recipes.md` (profile recipes)
 
-Plugin root: `${CLAUDE_PLUGIN_ROOT}` — record this absolute value once at run start and use it as `<root>` in every dispatch prompt (a subagent's Read does not expand it).
+Plugin root: `${CLAUDE_PLUGIN_ROOT}` — record this absolute value once at run start and use it as `<root>` in every dispatch prompt (subagent Reads don't expand it).
 
 ## State CLI
 
@@ -52,13 +52,14 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
 | `dod` | read-only DoD gate (exit 0 PASSED / 1 FAILED) |
 | `lessons add --globs <g,..> --text <rule> [--ref r]` · `lessons list [--touches g,..] [--json]` · `lessons prune --id L3[,L5] \| --before YYYY-MM-DD \| --keep N` | `.dev-cycle/lessons.md` (prune is manual, one selector) |
 | `recipe run <name> [--param k=v]... [--task <n>] [--timeout <s>]` · `recipe list [--json]` | the only way to run a profile recipe (argv, no shell; grammar: `references/recipes.md`) |
+| `worktree start\|collect\|remove --all\|list` | opt-in isolation: `references/worktrees.md` |
 | `visual …` · `report --feature <f>` | visual-tester CLI (`visual teardown` below) / render the report index and print its path |
 
 `dev-cycle:cli-fallback` (replacing static-checker and git-agent) is dispatched only for the failures named below. A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git from subagents (a guardrail, not a security boundary).
 
 ## The job
 
-1. **Feature-start interview** — `profile show --json`, then the questions in `lifecycle.md` §4. **Track is never asked.** For flow `feature` start at `quick` (the default) and escalate without asking, printing exactly one line `> TRACK: <track> — <reason>` before any dispatch; an explicit user track always wins.
+1. **Feature-start interview** — `profile show --json`, then the questions in `lifecycle.md` §4. **Track is never asked.** For flow `feature` start at `quick` (the default) and escalate without asking, printing exactly one line `> TRACK: <track> — <reason>` before any dispatch; an explicit user track wins.
    - `lite`: the request spans more than one area, or adds a new screen or a new API;
    - `full`: it spans several subsystems, has architecture impact, or needs wireframes for new UI.
 

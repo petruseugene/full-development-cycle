@@ -16,6 +16,8 @@ Get your `Touches:` globs by track. Full: from `briefs/task-<n>.md` (Touches, De
 
 **Soft contract (honor-based, not enforced):** Stay within `Touches:`. If you must write outside those globs, be honest — list every extra path under `touches_expanded:` in your final YAML report. The orchestrator uses that list to detect sibling collisions; lying about it corrupts other tasks' work.
 
+**Worktree:** when your prompt carries `Worktree: <abs>`, you run in an isolated git worktree. Prefix every Bash call with `cd <abs> &&`; read and write only under `<abs>`, resolving the brief's repo-relative paths against it; pass `--feature <abs feature dir>` to the CLI; run no state-changing git (no stash, checkout, reset, restore, switch or commit). Still report `touches_expanded`.
+
 ## Required reading
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` — the playbook core (shared contract). Read it before anything else.

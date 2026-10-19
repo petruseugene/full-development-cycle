@@ -185,3 +185,5 @@ with the conflict history attached.
   the prior group's writes already committed to the working tree.
 - Does **not** re-run already-passing end-gates after a fix cycle
   (see "Only-failed-gates re-run" above).
+
+With `worktrees.mode != off`, collect results replace this check only for tasks that got a worktree (see `worktrees.md`). Non-isolated tasks (all tasks in audit mode, and auto below min_group) keep the self-reported `touches_expanded` check above.

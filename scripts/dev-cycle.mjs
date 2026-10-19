@@ -32,6 +32,7 @@ export const COMMANDS = Object.freeze({
   review: 'cmd-review.mjs',         // review snapshot [--cycle n] | review diff [--since-cycle n] [--name-only]
   init: 'cmd-init.mjs',             // init [--preset web|expo] [--force] (write .dev-cycle/project.json)
   ship: 'cmd-ship.mjs',             // ship [--release major|minor|patch|auto] [--subject <s>] [--body <b>] [--notes-file <f>] [--manifest <path>]... [--scope <s>] [--trailer "Key: value"]... [--closes <n,m>] [--body-footer <text>] [--ci-timeout <s>] [--gh-credential]
+  worktree: 'cmd-worktree.mjs',     // worktree start --tasks <n,..> | collect | remove --all|--task <n> | list
   report: 'cmd-report.mjs',         // report [--feature <dir> | --all] [--out <dir>] [--json] [--no-network]
 });
 

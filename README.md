@@ -106,7 +106,7 @@ The interview sets flags that enable optional phases: `auto_tests`, `visual_test
 
 ## Project profile
 
-Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `visual`.
+Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `recipes`, `visual`, `worktrees`.
 
 ```json
 {
@@ -136,11 +136,19 @@ Optional file `.dev-cycle/project.json` in the target project. Validate it with 
   "guards": ["Never touch generated files under src/gen/"],
   "rules": [
     { "globs": ["src/api/**"], "text": "All handlers validate input with zod." }
-  ]
+  ],
+  "worktrees": { "mode": "audit" }
 }
 ```
 
 Notes: `commands` accepts `lint`, `typecheck`, `test` and `format`; a command may contain an unquoted `{files}` placeholder for touched-scope runs. `interview_defaults` accepts `has_ui`, `platform`, `has_backend`, `architecturally_significant`, `design_source`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `discovery` and `separate_plan`. Gate and post-merge names match `[a-z0-9-]+`; post-merge steps with `confirm: true` never run without `--confirmed`. Some skills are always enabled regardless of `enabled_skills` (playbook, orchestrator, using-dev-cycle, spec-writer, frontend-dev, backend-dev, code-reviewer, cli-fallback). `profile validate` prints "protected skill '...' is always enabled" warnings for protected skills left out of `enabled_skills`; they are expected and harmless. Claude Code cannot disable individual plugin skills, so `enabled_skills` only stops dispatch; it does not reduce prompt size.
+
+### `profile.worktrees`
+Optional worktree isolation for parallel task groups. Keys: `mode` (`off` default, `audit`, `auto`), `min_group` (integer >= 2, default 3), `dir` (repo-relative, default `.dev-cycle/worktrees`), `link` (globs symlinked into each worktree, default `**/node_modules`), `copy` (globs copied, default `.env`, `.env.*`) and `setup` (a command run inside each new worktree). `dir`, `link` and `copy` must be relative and contain no `..` segment. With `worktrees.mode` set to `audit`, groups still run in the shared tree and the CLI only records what isolation would have changed; `auto` runs eligible groups in isolated worktrees and merges them back with `worktree collect`. Expo and React Native projects usually want `"link": []` plus a `setup` command such as `npm ci`, because linked native dependency folders are not safe to share:
+
+```json
+{ "worktrees": { "mode": "audit", "link": [], "setup": "npm ci" } }
+```
 
 ### `profile.visual`
 
@@ -225,6 +233,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `git push` | Push the branch |
 | `git pr [--base b] [--title t] [--body-footer text]` | Open the pull request |
 | `git merge [--ci-timeout s]` | Merge (runs the dod gate first) |
+| `worktree start\|collect\|remove\|list [args]` | Worktree isolation for parallel groups: `start` creates one worktree per task, `collect` applies each task's changes back to the main tree (all-or-nothing, conflicts reported, out-of-Touches paths listed), `remove` deletes worktrees recorded in the manifest, `list` shows active ones. Configured by `worktrees` in the profile |
 | `visual plan\|build\|run\|mark\|check\|verdict\|gallery\|teardown [args]` | Visual verification: select screens, build once, run flows with time limits, compute composition checks, decide the verdict, write the gallery, stop what the run started (teardown is required before the verdict) |
 | `report [--feature <dir> \| --all] [--out <dir>] [--json] [--no-network]` | Generate the static HTML report into `.dev-cycle/report/` (default `--all`) |
 | `tokens agent <id> [--session s]` / `tokens orchestrator [--session s]` | Print measured token usage |

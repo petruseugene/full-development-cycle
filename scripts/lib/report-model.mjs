@@ -145,7 +145,43 @@ export function loadFeature(dir, { projectRoot } = {}) {
     post_merge_logs: postMergeLogs(dir),
   };
   if (tl.plan_groups) feature.plan_groups = tl.plan_groups;
+  const worktrees = buildWorktreeRows(history);
+  if (worktrees.length > 0) feature.worktrees = worktrees;
   return feature;
+}
+
+const lenOf = (v) => (Array.isArray(v) ? v.length : 0);
+const taskNums = (v) => (Array.isArray(v) ? v.filter((n) => Number.isInteger(n)) : []);
+
+/**
+ * One row per `worktree` group entry (has a `tasks` array): mode (isolated|audit),
+ * count of touches_expanded paths across the group's task entries, stray and
+ * conflict counts. Returns [] when there is no such entry.
+ */
+export function buildWorktreeRows(history) {
+  const list = Array.isArray(history) ? history : [];
+  const wt = list.map((e, i) => ({ e, i })).filter(({ e }) => isObj(e) && e.phase === 'worktree');
+  const groups = wt.filter(({ e }) => Array.isArray(e.tasks));
+  if (groups.length === 0) return [];
+  const rows = groups.map(({ e }) => ({ e, touches: new Set(), conflicts: lenOf(e.conflicts) }));
+  for (const { e, i } of wt) {
+    if (Array.isArray(e.tasks) || !Number.isInteger(e.task)) continue;
+    const later = groups.findIndex((g) => g.i > i && taskNums(g.e.tasks).includes(e.task));
+    let at = later;
+    if (at === -1) {
+      for (let k = groups.length - 1; k >= 0; k--) {
+        if (groups[k].i < i && taskNums(groups[k].e.tasks).includes(e.task)) { at = k; break; }
+      }
+    }
+    if (at === -1) continue;
+    for (const p of Array.isArray(e.touches_expanded) ? e.touches_expanded : []) rows[at].touches.add(String(p));
+    rows[at].conflicts += lenOf(e.conflicts);
+  }
+  return rows.map(({ e, touches, conflicts }) => {
+    const status = String(e.status ?? '').toLowerCase();
+    const mode = status === 'audit' || status === 'isolated' ? status : str(e.mode) ?? (status || 'unknown');
+    return { mode, status: str(e.status), tasks: taskNums(e.tasks), touches_expanded: touches.size, stray: lenOf(e.stray), conflicts };
+  });
 }
 
 function latestPlanDoneMs(history, beforeMs = Infinity) {

@@ -3,6 +3,17 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.6.0] — 2026-10-19
+
+### Added
+
+- feat(scripts): worktree isolation for parallel task groups
+
+### Added
+- `worktree start|collect|remove|list` command: optional git worktree isolation for parallel task groups, with all-or-nothing collect, conflict reporting and manifest-confined cleanup.
+- `worktrees` profile key (`mode`, `min_group`, `dir`, `link`, `copy`, `setup`) with validation and defaults; this repository dogfoods `mode: "audit"`.
+- Worktree-aware feature resolution: the CLI finds the active feature folder from inside a worktree.
+
 ## [1.5.1] — 2026-10-19
 
 ### Fixed

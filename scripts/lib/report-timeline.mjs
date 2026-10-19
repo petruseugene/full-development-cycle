@@ -37,6 +37,7 @@ export function buildTimeline(history, { tasks } = {}) {
   const entries = [];
   (Array.isArray(history) ? history : []).forEach((e, index) => {
     if (!e || typeof e !== 'object') return;
+    if (e.phase === 'worktree') return; // bookkeeping; shown as worktree rows, not bars
     const t = timingOf(e);
     if (!t) return;
     entries.push({ e, index, ...t });

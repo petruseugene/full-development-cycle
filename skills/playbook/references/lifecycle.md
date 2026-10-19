@@ -6,7 +6,7 @@ The orchestrator-only half of the playbook; the core (`../SKILL.md`: §2, §3, �
 
 Plugin paths are relative to `${CLAUDE_PLUGIN_ROOT}`; artefact paths (`docs/features/…`, `docs/architecture/…`) to the **target project**. State changes go only through `node ${CLAUDE_PLUGIN_ROOT}/scripts/dev-cycle.mjs <command>` (`--feature <dir>` overrides auto-detection, which ignores a closed feature, `current_phase == "done"`, for `check`, `recipe` and `gate` writes). Lessons live in `<project root>/.dev-cycle/lessons.md`.
 
-Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallback` is the only fallback agent (§1, §7). A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git commands from subagents: a guardrail, not a security boundary; orchestrator CLI calls are unaffected.
+Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallback` is the only fallback agent (§1, §7). A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git commands from subagents: a guardrail, not a security boundary.
 
 `feature set <key> <value>` (JSON-parsed if it parses, else a string) writes the keys with no other writer: `current_phase`, `current_task_idx`, `task_count`, `branch`, `status` (`blocked|active`), `areas`, `models`, `design_source`, `owner_blocking`; any other key exits 2. Absent `.dev-cycle/project.json` (no profile) ⇒ current behaviour.
 
@@ -26,7 +26,7 @@ Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallb
    `Touches:` + `Depends on:`, plus `## Execution plan`). Skipped when `separate_plan == false`:
    spec-writer appends `## Tasks`, `## Execution plan`, `## Task details` to spec.md in the format of
    `${CLAUDE_PLUGIN_ROOT}/skills/plan-writer/references/task-format.md`; the CLI's tasks source is then
-   spec.md (plan.md wins when it exists).
+   spec.md (plan.md wins).
 6. `git branch`: creates `feat/<slug>` from the default branch, sets `branch`, logs a `git` history
    entry. `main-ahead` or `auth` → escalate in one line; no agent.
 7. Groups via the CLI (`groups`; `brief <n>` writes `briefs/task-<n>.md`): topologically sort tasks by
@@ -39,7 +39,7 @@ Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallb
           - mixed → dev-cycle:frontend-dev (backend-dev if frontend-dev is skipped)
           - content → dev-cycle:backend-dev (whatever the stack token; the brief carries `## Recipe`)
           - owner → none (wait for owner)
-        Owner tasks are never dispatched; content tasks always are. Prompt: orchestrator skill.
+        Owner tasks are never dispatched; content tasks always are. Prompt: orchestrator skill. Isolation: `orchestrator/references/worktrees.md`.
         Implementers run `check --scope touched --files <changed>` before DONE and list out-of-glob
         writes under `touches_expanded:`.
      c. wait for all reports; record each with `history add --agent-id <agentId>` (`--tokens` fallback):

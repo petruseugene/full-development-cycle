@@ -6,12 +6,11 @@
 // and working tree are never touched. `diff` compares the current tree with a
 // recorded snapshot, leaving the feature folder out.
 
-import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { UsageError, output, parseCommandArgs, resolveFeatureDir } from './core.mjs';
 import { readFeatureJson, updateFeatureJson } from './feature-json.mjs';
-import { gitOk, gitRun } from './git-exec.mjs';
+import { gitRun } from './git-exec.mjs';
+import { currentTree } from './git-tree.mjs';
 
 const TREE_RE = /^[0-9a-f]{40}([0-9a-f]{24})?$/;
 const USAGE = 'review snapshot [--cycle n] | review diff [--since-cycle n] [--name-only]';
@@ -20,22 +19,6 @@ function parseCycle(raw, flag) {
   if (raw === undefined) return undefined;
   if (!/^\d+$/.test(raw)) throw new UsageError(`${flag} must be an integer (got '${raw}')`);
   return Number(raw);
-}
-
-/** Tree id of the current working tree via a throw-away index seeded from HEAD. */
-async function currentTree(ctx, top) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-cycle-index-'));
-  try {
-    const opts = { cwd: top, env: { ...ctx.env, GIT_INDEX_FILE: path.join(dir, 'index') } };
-    const head = await gitRun(['rev-parse', '--verify', '-q', 'HEAD'], { cwd: top, env: ctx.env });
-    if (head.code === 0) await gitOk(['read-tree', 'HEAD'], opts);
-    await gitOk(['add', '-A'], opts);
-    const tree = await gitOk(['write-tree'], opts);
-    if (!TREE_RE.test(tree)) throw new UsageError(`git write-tree returned an unexpected value: ${tree}`);
-    return tree;
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
 }
 
 async function repoTop(ctx) {
