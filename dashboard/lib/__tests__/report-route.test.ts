@@ -7,7 +7,7 @@ import React from 'react';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 vi.mock('@/lib/snapshot-context', () => ({
-  useSnapshot: () => ({ activeFeatureId: null, snapshot: null }),
+  useSnapshot: () => ({ activeFeatureId: null, snapshot: null, agentEnabled: true }),
 }));
 
 import { GET } from '@/app/report/[[...file]]/route';

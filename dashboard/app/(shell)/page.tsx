@@ -26,7 +26,7 @@ import { useSnapshot } from '@/lib/snapshot-context';
 const CLOSE_GRACE_MS = 200;
 
 export default function BoardPage() {
-  const { snapshot, activeFeatureId, openChat, chatClosedAt } = useSnapshot();
+  const { snapshot, activeFeatureId, openChat, chatClosedAt, agentEnabled } = useSnapshot();
 
   // `activeFeatureId` is owned by the shell layout via SnapshotContext so the
   // Sidebar's pinned-feature clicks can drive the Board's scope.
@@ -70,6 +70,10 @@ export default function BoardPage() {
   const deepLinkApplied = useRef(false);
   useEffect(() => {
     if (deepLinkApplied.current) return;
+    if (!agentEnabled) {
+      deepLinkApplied.current = true;
+      return;
+    }
     if (typeof window === 'undefined') return;
     if (!snapshot) return;
     const params = new URLSearchParams(window.location.search);
@@ -85,7 +89,7 @@ export default function BoardPage() {
       null;
     if (target) openChat(target.id);
     deepLinkApplied.current = true;
-  }, [snapshot, features, openChat]);
+  }, [snapshot, features, openChat, agentEnabled]);
 
   // Quick-add task modal (Feature D) lifted to page level so both the
   // Toolbar primary button and Board column-header trigger share one modal.

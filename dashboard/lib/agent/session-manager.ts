@@ -47,11 +47,13 @@ import type {
 
 import type {
   AgentEvent,
+  ErrorEvent,
   SessionInputQueue,
   SessionMeta,
   SessionRecord,
   SessionStatus,
 } from './types';
+
 import {
   createApprovalState,
   type ApprovalDecision,
@@ -68,6 +70,15 @@ import {
   type SessionStats,
 } from './stats';
 import { assertSafeFeatureId } from './path-safety';
+
+/** Sessions that already emitted an SDK `error` event this turn (R9). */
+const turnErrorEmitted = new WeakSet<SessionRecord>();
+
+/** Redact anything key-shaped and cap length before text reaches the client. */
+export function sanitizeErrorDetail(text: string, max = 200): string {
+  const redacted = text.replace(/sk-ant-[A-Za-z0-9_-]+/g, '[redacted]');
+  return redacted.length > max ? `${redacted.slice(0, max)}…` : redacted;
+}
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* Paths                                                                  */
@@ -422,10 +433,23 @@ class SessionManager {
     featureId: string,
   ): Promise<{ sessionId: string; status: SessionStatus }> {
     assertSafeFeatureId(featureId);
-    if (this.sessions.has(featureId)) {
+    const live = this.sessions.get(featureId);
+    if (live && live.meta.status !== 'errored') {
       // Already alive — nothing to resume.
-      const live = this.sessions.get(featureId) as SessionRecord;
       return { sessionId: live.meta.sessionId, status: live.meta.status };
+    }
+    if (live) {
+      // L13 — a live record marked errored (SDK error) is a dead end for
+      // send(); Retry must restart it. Tear it down, then fall through to
+      // the persisted-meta resume below.
+      live.abort.abort();
+      live.inputQueue?.close();
+      try {
+        live.query?.close();
+      } catch {
+        // SDK may throw if already closed — swallow.
+      }
+      this.sessions.delete(featureId);
     }
     const persisted = await this.readMeta(featureId);
     if (!persisted) {
@@ -1119,7 +1143,9 @@ class SessionManager {
       await this.persistMeta(record);
       this.emitEvent(record, {
         type: 'error',
-        message: err instanceof Error ? err.message : String(err),
+        message: sanitizeErrorDetail(
+          err instanceof Error ? err.message : String(err),
+        ),
         retryable: true,
       });
       // Final flush on error too — the partial accumulator is more
@@ -1177,6 +1203,18 @@ class SessionManager {
     const messageId =
       (msg.message as { id?: string }).id ?? `msg_${record.nextEventId}`;
     const content = (msg.message as { content?: unknown[] }).content ?? [];
+    // SDK-reported error (billing, auth, ...): surface as one `error`
+    // event instead of a plain assistant bubble (R9).
+    const sdkError = (msg as { error?: string }).error;
+    if (sdkError) {
+      const text = content
+        .filter((b) => (b as { type?: string }).type === 'text')
+        .map((b) => (b as { text?: string }).text ?? '')
+        .join('')
+        .trim();
+      this.emitSdkError(record, sdkError, text);
+      return;
+    }
     // One assistant message === one conversational turn (R7, AC5).
     // Bumped here rather than per-block so a multi-tool-call turn still
     // only counts as one.
@@ -1267,7 +1305,68 @@ class SessionManager {
     return '';
   }
 
+  /**
+   * Emit one `error` event for an SDK-reported error and mark the session
+   * errored. Records that an error was emitted this turn so `handleResult`
+   * does not emit a second one.
+   */
+  private emitSdkError(
+    record: SessionRecord,
+    code: string,
+    text: string,
+  ): void {
+    const known: ReadonlyArray<NonNullable<ErrorEvent['code']>> = [
+      'billing_error',
+      'authentication_failed',
+      'rate_limit',
+      'invalid_request',
+      'server_error',
+      'max_output_tokens',
+      'oauth_org_not_allowed',
+      'unknown',
+    ];
+    const c = (known as readonly string[]).includes(code)
+      ? (code as NonNullable<ErrorEvent['code']>)
+      : 'unknown';
+    let message: string;
+    if (c === 'billing_error') {
+      message =
+        'API credit balance too low — top up at https://platform.claude.com/settings/billing, then Retry.';
+    } else if (c === 'authentication_failed') {
+      message = 'API key rejected — check ANTHROPIC_API_KEY.';
+    } else {
+      message = sanitizeErrorDetail(text || code);
+    }
+    turnErrorEmitted.add(record);
+    if (record.meta.status !== 'killed') {
+      record.meta.status = 'errored';
+      record.meta.lastEventAt = new Date().toISOString();
+      void this.persistMeta(record);
+    }
+    const retryable = c !== 'authentication_failed' && c !== 'invalid_request';
+    this.emitEvent(record, { type: 'error', code: c, message, retryable });
+    this.emitEvent(record, {
+      type: 'status',
+      status: 'errored',
+      phase: 'errored',
+    });
+  }
+
   private handleResult(record: SessionRecord, msg: SDKResultMessage): void {
+    const alreadyErrored = turnErrorEmitted.delete(record);
+    const rm = msg as unknown as {
+      is_error?: boolean;
+      result?: string;
+      errors?: string[];
+    };
+    if (rm.is_error && !alreadyErrored) {
+      this.emitSdkError(
+        record,
+        'unknown',
+        (typeof rm.result === 'string' && rm.result) || rm.errors?.[0] || '',
+      );
+      turnErrorEmitted.delete(record);
+    }
     const m = msg as unknown as {
       usage?: {
         input_tokens?: number;

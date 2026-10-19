@@ -142,6 +142,16 @@ export interface ErrorEvent extends AgentEventBase {
   type: 'error';
   message: string;
   retryable: boolean;
+  /** Machine-readable cause when the SDK reported one (e.g. billing). */
+  code?:
+    | 'billing_error'
+    | 'authentication_failed'
+    | 'rate_limit'
+    | 'invalid_request'
+    | 'server_error'
+    | 'max_output_tokens'
+    | 'oauth_org_not_allowed'
+    | 'unknown';
 }
 
 /**

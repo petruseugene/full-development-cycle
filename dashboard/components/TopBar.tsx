@@ -2,8 +2,10 @@
 
 import OrchestratorPill from './OrchestratorPill';
 import PendingApprovalsPill from './PendingApprovalsPill';
+import { useSnapshot } from '@/lib/snapshot-context';
 
 export function TopBar({ onSearch, onNew }: { onSearch: () => void; onNew: () => void }) {
+  const { agentEnabled } = useSnapshot();
   return (
     <header className="h-12 flex items-center px-4 hair bg-white sticky top-0 z-30">
       <div className="flex items-center gap-2.5 w-[232px] pr-3">
@@ -35,7 +37,7 @@ export function TopBar({ onSearch, onNew }: { onSearch: () => void; onNew: () =>
 
       <div className="flex items-center gap-2">
         <OrchestratorPill />
-        <PendingApprovalsPill />
+        {agentEnabled ? <PendingApprovalsPill /> : null}
         <button
           onClick={onNew}
           className="h-8 px-3 rounded-md bg-primary text-white text-[13px] font-medium flex items-center gap-2"

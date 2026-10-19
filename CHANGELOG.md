@@ -3,6 +3,18 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.0] — 2026-10-19
+
+### Added
+
+- feat(dashboard): make Agent SDK features optional (DASHBOARD_AGENT auto|on|off)
+
+### Added
+- Dashboard `DASHBOARD_AGENT=auto|on|off` mode (`--agent=` / `--no-agent` flags on `/dev-cycle:dashboard`): chat and `/api/agent/**` are hidden (404) without a valid `ANTHROPIC_API_KEY`; `/api/agent-status` reports the resolved mode.
+
+### Fixed
+- Chat now shows a "Credit balance too low" ErrorCard with a Retry button on API credit-balance errors instead of a plain assistant bubble.
+
 ## [1.6.0] — 2026-10-19
 
 ### Added

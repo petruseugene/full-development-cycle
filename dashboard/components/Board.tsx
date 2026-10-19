@@ -31,7 +31,7 @@ export function Board({
   // + Task button), not per task card. When grouping by status/tag/agent the
   // Board has no per-feature header — the chat is still reachable via the
   // Sidebar pinned-feature click (R22b) and deep-link (R22c).
-  const { openChat } = useSnapshot();
+  const { openChat, agentEnabled } = useSnapshot();
   const columns = bucketBoard(features, groupKey).map((col) => ({
     ...col,
     items: sortColumnItems(col.items, sortKey),
@@ -128,6 +128,7 @@ export function Board({
                           header alongside slug-pill / phase chip / + Task
                           so it is rendered once per feature, not per task
                           card. */}
+                      {agentEnabled ? (
                       <button
                         type="button"
                         aria-label={`Open chat for ${colFeature.title}`}
@@ -147,6 +148,7 @@ export function Board({
                         </svg>
                         <span>Chat</span>
                       </button>
+                      ) : null}
                     </>
                   ) : null}
                 </div>
