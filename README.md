@@ -1,5 +1,7 @@
 # dev-cycle
 
+![dev-cycle pipeline: the orchestrator dispatches discovery, spec, plan, implement, gates and git; failed gates loop back to implement](docs/assets/dev-cycle-pipeline.svg)
+
 A [Claude Code](https://claude.com/claude-code) plugin that takes a feature or a bugfix from idea to merged pull request through strict subagent dispatch. The orchestrator never writes feature code itself. It interviews you, then dispatches specialised skills for each phase and keeps the state in plain files and a small CLI.
 
 Pipeline: **discovery → spec → plan → parallel implementation → review and test gates → git (branch, commit, PR, merge)**.
@@ -253,6 +255,8 @@ It is a guardrail against accidents, not a security boundary: it uses a hand-wri
 ## Dashboard
 
 `/dev-cycle:dashboard` starts a local Next.js dashboard (http://127.0.0.1:3737) that watches `docs/features/` of the current project: a task board, per-feature detail, token and model spend, and an agent chat drawer. Install its dependencies once with `npm install` inside `dashboard/`. The sidebar has a "Report" link to the generated HTML report (see `/dev-cycle:report`). See `dashboard/README.md` for details.
+
+Chat is billed at Anthropic API rates (Claude Agent SDK). Control it with `DASHBOARD_AGENT=auto|on|off`: in `auto` (the default) chat is hidden without a valid `ANTHROPIC_API_KEY`, and every `/api/agent/**` route returns 404. Force it with `/dev-cycle:dashboard --agent=on`, `--agent=off` or `--no-agent`, or set `DASHBOARD_AGENT` in `dashboard/.env.local`. Restart the dashboard after changing the env, the flag or the key. `on` skips the key check, so a Claude Code login can be used.
 
 ## Repository layout
 

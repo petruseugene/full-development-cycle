@@ -191,7 +191,7 @@ function Body({
   onClose: () => void;
   closeBtnRef: React.RefObject<HTMLButtonElement>;
 }) {
-  const { openChat } = useSnapshot();
+  const { openChat, agentEnabled } = useSnapshot();
   const reviews = feature.reviews.filter((r) => r.taskId === task.id);
   const featureSlug = feature.slug;
   const agentLabel = agentLabelForTag(task.tag);
@@ -373,13 +373,15 @@ function Body({
 
       {/* Footer — AC43: right-aligned Open chat / View on disk / Close (autofocus) */}
       <div className="px-5 py-2.5 border-t border-line flex items-center justify-end gap-2">
-        <button
-          type="button"
-          className="h-8 px-3 rounded-md border border-transparent text-[13px] text-ink-700 hover:bg-ink-50"
-          onClick={onOpenChat}
-        >
-          Open chat
-        </button>
+        {agentEnabled ? (
+          <button
+            type="button"
+            className="h-8 px-3 rounded-md border border-transparent text-[13px] text-ink-700 hover:bg-ink-50"
+            onClick={onOpenChat}
+          >
+            Open chat
+          </button>
+        ) : null}
         <button
           type="button"
           className="h-8 px-3 rounded-md border border-line bg-white text-[13px] text-ink-700 hover:bg-ink-50"

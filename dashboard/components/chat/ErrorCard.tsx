@@ -97,7 +97,7 @@ export default function ErrorCard({
           ERROR
         </span>
         <span className="text-[13px] font-semibold text-ink-900">
-          SDK error
+          {event.code === 'billing_error' ? 'Credit balance too low' : 'SDK error'}
         </span>
         <span className="ml-auto chip st-blocked">errored</span>
       </div>
@@ -105,6 +105,7 @@ export default function ErrorCard({
         {detail}
       </p>
       <div className="actions mt-2 flex items-center gap-2">
+        {event.retryable !== false && (
         <button
           type="button"
           className="btn btn--sm inline-flex items-center justify-center h-7 px-3 rounded-md bg-primary text-white text-[12.5px] font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
@@ -114,6 +115,7 @@ export default function ErrorCard({
         >
           {state === 'pending' ? 'Retrying…' : 'Retry'}
         </button>
+        )}
         {state === 'failed' && failureMessage && (
           <span className="retry-failed text-[12px] text-red-700">
             {failureMessage}

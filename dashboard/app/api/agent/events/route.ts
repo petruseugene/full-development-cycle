@@ -18,8 +18,7 @@
  * disable edge + ISR so the stream is never cached.
  */
 
-import { assertLoopback } from '@/lib/agent/loopback';
-import { sessionManager } from '@/lib/agent/session-manager';
+import { agentGate } from '@/lib/agent-mode';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +29,11 @@ const BROADCAST_EVENTS = [
   'session_status',
 ] as const;
 
-export function GET(request: Request): Response {
+export async function GET(request: Request): Promise<Response> {
+  const gated = await agentGate();
+  if (gated) return gated;
+  const { assertLoopback } = await import('@/lib/agent/loopback');
+  const { sessionManager } = await import('@/lib/agent/session-manager');
   const blocked = assertLoopback(request);
   if (blocked) return blocked;
 

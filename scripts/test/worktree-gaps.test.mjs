@@ -112,6 +112,10 @@ test('AC27: project profile, README and CHANGELOG', () => {
   const cl = rd('CHANGELOG.md');
   const heads = cl.split('\n').filter((l) => l.startsWith('## '));
   assert.match(heads[0], /^## \[(Unreleased|\d+\.\d+\.\d+)\]/);
-  const sec = cl.split(/^## /m)[1];
-  assert.match(sec.slice(sec.indexOf('### Added')), /worktree/);
+  const sections = cl.split(/^## /m).slice(1).filter((s) => /^\[(Unreleased|\d+\.\d+\.\d+)\]/.test(s));
+  const addedMentions = (s) => {
+    const i = s.indexOf('### Added');
+    return i >= 0 && /worktree/.test(s.slice(i).split(/\n### /)[0]);
+  };
+  assert.ok(sections.some(addedMentions), 'no [x.y.z]/[Unreleased] section mentions worktree under ### Added');
 });

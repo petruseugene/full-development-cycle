@@ -25,11 +25,9 @@ import { assertSameOrigin } from '@/lib/csrf';
 
 import { NextResponse } from 'next/server';
 
-import { assertLoopback } from '@/lib/agent/loopback';
-import { logRotation } from '@/lib/agent/log-rotation';
-import { assertSafeFeatureId } from '@/lib/agent/path-safety';
-import { sessionManager } from '@/lib/agent/session-manager';
 import type { SessionMeta, SessionRecord } from '@/lib/agent/types';
+
+import { agentGate, getAgentStatus } from '@/lib/agent-mode';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,6 +51,12 @@ export async function POST(
   request: Request,
   { params }: { params: { featureId: string } },
 ): Promise<Response> {
+  const gated = await agentGate();
+  if (gated) return gated;
+  const { assertLoopback } = await import('@/lib/agent/loopback');
+  const { logRotation } = await import('@/lib/agent/log-rotation');
+  const { assertSafeFeatureId } = await import('@/lib/agent/path-safety');
+  const { sessionManager } = await import('@/lib/agent/session-manager');
   const guard = assertLoopback(request);
   if (guard) return guard;
   const csrf = assertSameOrigin(request);
@@ -70,7 +74,9 @@ export async function POST(
     );
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Mode `on` skips the key check so a Claude Code login can be used.
+  const { mode } = await getAgentStatus();
+  if (mode !== 'on' && !process.env.ANTHROPIC_API_KEY) {
     // Stable error string — `ChatDrawer` (Task 10) deep-links to the README
     // anchor on exactly this body.
     return NextResponse.json(

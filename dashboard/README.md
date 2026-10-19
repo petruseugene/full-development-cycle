@@ -58,6 +58,15 @@ npm run dev
 
 `dashboard/.env.local` is gitignored by Next.js by default — prefer it over your shell rc file if you want the key scoped to this project. Whichever path you choose, you must restart the dev server after changing the value; the SDK reads the variable at session-start time.
 
+### Agent mode
+
+Chat is billed at Anthropic API rates (Claude Agent SDK). Control it with `DASHBOARD_AGENT=auto|on|off`: in `auto` (the default) chat is hidden without a valid `ANTHROPIC_API_KEY`, and every `/api/agent/**` route returns 404. Force it with `/dev-cycle:dashboard --agent=on`, `--agent=off` or `--no-agent`, or set `DASHBOARD_AGENT` in `dashboard/.env.local`. Restart the dashboard after changing the env, the flag or the key. `on` skips the key check, so a Claude Code login can be used.
+
+```bash
+DASHBOARD_AGENT=off npm run dev                 # hide chat
+bash scripts/run-dashboard.sh --agent=on /path/to/project
+```
+
 This section is the canonical setup target (`#anthropic-api-key`); the legacy anchor `#agent-sdk-setup` resolves to the same content so older deep-links keep working.
 
 ### Trust boundary

@@ -18,6 +18,8 @@ export interface SnapshotContextValue {
   openChat: (featureId: string) => void;
   closeChat: () => void;
   chatClosedAt: number;
+  // False when the server resolved the agent as disabled (DASHBOARD_AGENT).
+  agentEnabled: boolean;
 }
 
 const SnapshotContext = createContext<SnapshotContextValue | null>(null);
