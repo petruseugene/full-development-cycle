@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code local-only files
+.claude/settings.local.json
+
+# Node (root-level; dashboard/ has its own)
+node_modules/
+.next/
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Dashboard Agent SDK runtime (session metadata, NDJSON event logs, stats snapshots)
+dashboard/.runtime/
+
+# Local dev-cycle artefacts of this repo; not published
+docs/features/
+docs/superpowers/
+
+# Superpowers brainstorm mockups + visual-companion state
+.superpowers/
+.playwright-mcp/

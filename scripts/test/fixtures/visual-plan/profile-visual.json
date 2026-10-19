@@ -1,0 +1,13 @@
+{
+  "screen_timeout_s": 120,
+  "device": "emulator-5554",
+  "screens": [
+    { "id": "lis-home", "title": "Lis home", "flow": "maestro --device {device} test flows/lis.yaml", "screenshot": "lis-home.png",
+      "reference": "design/lis-home.png", "touches": ["apps/mova/src/lis/*.tsx"], "acs": ["AC3"], "timeout_s": 90,
+      "elements": { "hero": "hero" }, "checks": [{ "type": "tap", "elements": ["hero"] }] },
+    { "id": "lis-detail", "title": "Lis detail", "route": "/lis/detail", "reference": "design/lis-detail.png",
+      "touches": ["apps/mova/src/lis/*.tsx"], "checks": [{ "type": "colors" }] },
+    { "id": "other", "title": "Other", "route": "/other", "touches": ["apps/other/**"] },
+    { "id": "about", "title": "About", "route": "/about" }
+  ]
+}

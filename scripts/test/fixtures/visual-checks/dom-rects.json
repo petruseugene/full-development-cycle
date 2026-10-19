@@ -1,0 +1,10 @@
+{
+  "elements": {
+    "hero": { "x": 100, "y": 400, "width": 200, "height": 100 },
+    "friend": { "x": 120, "y": 407, "width": 100, "height": 92 },
+    "perch": { "x": 80, "y": 500, "width": 320, "height": 40 },
+    "cta": { "x": 10, "y": 700, "width": 43, "height": 60 },
+    "bad": { "x": "a", "y": 1, "width": 2, "height": 3 },
+    "nan": null
+  }
+}

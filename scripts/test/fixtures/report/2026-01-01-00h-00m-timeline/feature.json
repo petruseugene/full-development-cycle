@@ -1,0 +1,16 @@
+{
+  "feature_slug": "timeline",
+  "created": "2026-01-01 00:00",
+  "flow": "feature",
+  "track": "full",
+  "started_at": "2026-01-01T00:00:00.000Z",
+  "current_phase": "implement",
+  "history": [
+    {"ts": "2026-01-01T00:10:00.000Z", "phase": "plan", "subagent": "dev-cycle:plan-writer", "status": "DONE", "model": "opus", "started_at": "2026-01-01T00:05:00.000Z", "ended_at": "2026-01-01T00:10:00.000Z", "tokens":{"input":1,"output":1,"cache_read":0,"cache_write":0},"estimated":false, "usd_est": 0.5, "tokens_k": 10},
+    {"ts": "2026-01-01T00:20:00.000Z", "phase": "implement.task=1", "subagent": "dev-cycle:backend-dev", "status": "DONE", "model": "sonnet", "duration_s": 600, "tokens_k": 20},
+    {"ts": "2026-01-01T00:18:00.000Z", "phase": "implement.task=2", "subagent": "dev-cycle:frontend-dev", "status": "DONE", "model": "sonnet", "duration_s": 480, "tokens":{"input":1,"output":1,"cache_read":0,"cache_write":0},"estimated":false, "usd_est": 1.0, "tokens_k": 15},
+    {"ts": "2026-01-01T00:25:00.000Z", "phase": "implement.task=2", "subagent": "dev-cycle:frontend-dev", "status": "DONE", "model": "sonnet", "duration_s": 120, "tokens":{"input":1,"output":1,"cache_read":0,"cache_write":0},"estimated":false, "usd_est": 0.25, "tokens_k": 5},
+    {"ts": "2026-01-01T00:30:00.000Z", "phase": "implement.task=2", "subagent": "dev-cycle:frontend-dev", "status": "DONE", "model": "sonnet", "duration_s": 120, "tokens":{"input":1,"output":1,"cache_read":0,"cache_write":0},"estimated":false, "usd_est": 0.75, "tokens_k": 6},
+    {"ts": "2026-01-01T00:50:00.000Z", "phase": "review", "subagent": "dev-cycle:code-reviewer", "status": "APPROVED", "model": "opus"}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "feature_slug": "dark-mode-tokens",
+  "created": "2026-05-04 11:00",
+  "flow": "feature",
+  "has_ui": true,
+  "has_backend": false,
+  "design_source": "https://figma.com/file/dark-tokens",
+  "auto_tests": true,
+  "visual_tests": true,
+  "current_phase": "done",
+  "current_task_idx": 6,
+  "task_count": 6,
+  "branch": "feat/dark-mode-tokens",
+  "history": [
+    { "ts": "2026-05-09T15:10:00Z", "phase": "git", "subagent": "git-agent", "status": "DONE", "duration_s": 30, "tokens_k": 0.4 },
+    { "ts": "2026-05-09T15:08:00Z", "phase": "test", "subagent": "visual-tester", "status": "PASSED", "duration_s": 92, "tokens_k": 1.6 },
+    { "ts": "2026-05-09T14:50:00Z", "phase": "review", "subagent": "code-reviewer", "status": "APPROVED", "duration_s": 60, "tokens_k": 1.2 }
+  ],
+  "totals": {
+    "by_subagent": {
+      "frontend-dev": { "calls": 6, "approved": 6, "retried": 0, "time_s": 5400, "tokens_k": 32.5 },
+      "code-reviewer": { "calls": 6, "approved": 6, "retried": 0, "time_s": 480, "tokens_k": 7.2 },
+      "visual-tester": { "calls": 1, "approved": 1, "retried": 0, "time_s": 92, "tokens_k": 1.6 },
+      "git-agent": { "calls": 7, "approved": 7, "retried": 0, "time_s": 210, "tokens_k": 2.8 }
+    }
+  }
+}

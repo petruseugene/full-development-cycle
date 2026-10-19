@@ -1,0 +1,85 @@
+{
+  "platform": "mobile",
+  "visual": {
+    "device": "A1B2C3D4-E5F6-4789-ABCD-0123456789AB",
+    "tolerance_pct": 10,
+    "screen_timeout_s": 180,
+    "budget_s": 900,
+    "avd": "Pixel_7_API_34",
+    "boot_timeout_s": 120,
+    "build": {
+      "cmd": "npx expo run:ios --device {device}",
+      "inputs": [
+        "src/**",
+        "app.json"
+      ],
+      "serve": "npx expo start --port 8081"
+    },
+    "teardown": [
+      "./scripts/stop-metro.sh"
+    ],
+    "tap_min_pt": 44,
+    "forbidden_colors": [
+      "#FF00FF"
+    ],
+    "color_delta_e": 10,
+    "color_min_pct": 0.1,
+    "screens": [
+      {
+        "id": "home",
+        "title": "Home",
+        "flow": "maestro --device {device} test --output {out} flows/home.yaml",
+        "screenshot": "home.png",
+        "reference": "design/home.png",
+        "touches": [
+          "src/home/**"
+        ],
+        "acs": [
+          "AC3"
+        ],
+        "timeout_s": 120,
+        "elements": {
+          "hero": "hero-img",
+          "floor": {
+            "id": "floor",
+            "foot_offset_pct": 0,
+            "support_offset_pct": 2
+          },
+          "button": "cta"
+        },
+        "checks": [
+          {
+            "type": "support",
+            "element": "hero",
+            "on": "floor"
+          },
+          {
+            "type": "scale",
+            "a": "hero",
+            "b": "button",
+            "expect": 1
+          },
+          {
+            "type": "overlap",
+            "a": "hero",
+            "b": "button"
+          },
+          {
+            "type": "tap",
+            "elements": [
+              "button"
+            ]
+          },
+          {
+            "type": "colors"
+          }
+        ]
+      },
+      {
+        "id": "settings",
+        "route": "/settings",
+        "reference": "https://x/y.png"
+      }
+    ]
+  }
+}

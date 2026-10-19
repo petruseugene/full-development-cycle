@@ -1,0 +1,4 @@
+{"type":"assistant","isSidechain":true,"timestamp":"Jan 1 2026 (<b>x</b>)","message":{"id":"l0","model":"claude-opus-5-5","usage":{"input_tokens":1,"output_tokens":1,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-10-18T21:00:00+02:00","message":{"id":"l1","model":"claude-opus-5-5","usage":{"input_tokens":1,"output_tokens":1,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-10-18T22:00:00Z","message":{"id":"l2","model":"claude-opus-5-5","usage":{"input_tokens":1,"output_tokens":1,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-13-45T99:00:00Z","message":{"id":"l3","model":"claude-opus-5-5","usage":{"input_tokens":1,"output_tokens":1,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}

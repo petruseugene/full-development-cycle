@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "last_activity": "2026-01-01T00:05:00.000Z",
+  "plan": { "ts": "2026-01-01T00:00:00.000Z", "all": false, "catalog": true, "selected": ["hero", "lis-m3"], "budget_s": 360, "flows": [] },
+  "screens": {
+    "hero": {
+      "id": "hero", "title": "Hero screen", "reference": "docs/design/hero-ref.png", "acs": ["AC1"],
+      "target": "iPhone 15", "timeout_s": 180, "duration_s": 12.3, "exit_code": 0, "result": "pass",
+      "screenshot": "shots/hero.png",
+      "checks": [
+        { "type": "scale", "subject": "friend/hero", "measured": 0.85, "expected": 1, "tolerance": 10, "source": "hierarchy", "result": "fail" },
+        { "type": "support", "subject": "friend on perch", "measured": 0, "expected": 0, "tolerance": 10, "source": "hierarchy", "result": "pass" }
+      ]
+    },
+    "lis-m3": {
+      "id": "lis-m3", "title": "Lis M3", "reference": "../../outside.png", "acs": ["AC2"],
+      "timeout_s": 60, "duration_s": 75.5, "overrun": true, "result": "pass",
+      "screenshot": "shots/lis.png",
+      "checks": [
+        { "type": "scale", "subject": "<svg onload=alert(1)>", "measured": 0.88, "expected": 0.9, "tolerance": 10, "source": "vision", "result": "pass" }
+      ]
+    }
+  },
+  "verdict": { "status": "FAILED", "ts": "2026-01-01T00:05:00.000Z", "run_time_s": 87.8, "budget_s": 360, "passed": 1, "total": 2, "reasons": [] }
+}

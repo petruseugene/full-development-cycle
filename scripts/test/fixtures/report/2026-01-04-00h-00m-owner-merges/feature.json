@@ -1,0 +1,15 @@
+{
+  "feature_slug": "owner-merges",
+  "created": "2026-01-04 00:00",
+  "flow": "feature",
+  "track": "full",
+  "started_at": "2026-01-04T00:00:00.000Z",
+  "current_phase": "done",
+  "branch": "feat/owner-merges",
+  "history": [
+    {"ts": "2026-01-04T00:30:00.000Z", "phase": "plan", "subagent": "dev-cycle:plan-writer", "status": "DONE", "model": "opus", "duration_s": 600, "tokens_k": 12},
+    {"ts": "2026-01-04T01:00:00.000Z", "phase": "plan", "subagent": "dev-cycle:plan-writer", "status": "DONE", "model": "opus", "duration_s": 300, "tokens_k": 6},
+    {"ts": "2026-01-04T03:00:00.000Z", "phase": "owner.task=3", "subagent": "owner", "status": "DONE", "model": "inherit", "executor": "cli"},
+    {"ts": "2026-01-04T04:00:00.000Z", "phase": "git", "subagent": "dev-cycle:git-agent", "status": "DONE", "model": "haiku", "executor": "cli"}
+  ]
+}

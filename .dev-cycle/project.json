@@ -1,0 +1,7 @@
+{
+  "commands": {
+    "lint": "bash scripts/lint-skills.sh",
+    "typecheck": "cd dashboard && npx tsc --noEmit",
+    "test": "node --test --test-reporter=dot scripts/test/"
+  }
+}

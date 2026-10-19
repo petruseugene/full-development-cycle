@@ -1,0 +1,10 @@
+{
+  "feature_slug": "legacy",
+  "created": "2025-06-01 09:00",
+  "flow": "feature",
+  "current_phase": "done",
+  "history": [
+    {"ts": "2025-06-01T09:30:00.000Z", "phase": "spec", "subagent": "spec-writer", "status": "DONE", "model": "opus", "tokens_k": 5},
+    {"ts": "2025-06-01T10:00:00.000Z", "phase": "implement", "subagent": "backend-dev", "status": "DONE", "model": "sonnet", "duration_s": 900, "tokens_k": 40}
+  ]
+}

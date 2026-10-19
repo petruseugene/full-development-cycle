@@ -1,0 +1,24 @@
+{
+  "feature_slug": "oauth-migration",
+  "created": "2026-05-09 09:15",
+  "flow": "feature",
+  "has_ui": false,
+  "has_backend": true,
+  "design_source": null,
+  "auto_tests": true,
+  "visual_tests": false,
+  "current_phase": "spec",
+  "current_task_idx": 0,
+  "task_count": 5,
+  "branch": "feat/oauth-migration",
+  "history": [
+    { "ts": "2026-05-10T07:40:00Z", "phase": "discovery", "subagent": "discovery", "status": "DONE", "duration_s": 320, "tokens_k": 5.6 },
+    { "ts": "2026-05-10T07:48:00Z", "phase": "spec", "subagent": "spec-writer", "status": "running", "duration_s": 0, "tokens_k": 2.1 }
+  ],
+  "totals": {
+    "by_subagent": {
+      "discovery": { "calls": 1, "approved": 1, "retried": 0, "time_s": 320, "tokens_k": 5.6 },
+      "spec-writer": { "calls": 1, "approved": 0, "retried": 0, "time_s": 0, "tokens_k": 2.1 }
+    }
+  }
+}

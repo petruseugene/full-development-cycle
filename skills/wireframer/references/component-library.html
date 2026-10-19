@@ -1,0 +1,2255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wireframe Component Library — Paper Sketch</title>
+
+    <!--
+  ============================================================
+  WIREFRAMER COMPONENT LIBRARY  (paper / pencil-sketch style)
+  ============================================================
+  PURPOSE
+    Canonical visual + structural reference for every wireframe
+    produced by the `dev-cycle:wireframer` skill. Every screen MUST reuse
+    classes, structure, and tokens from this file so all flows
+    in a feature look like one set of sketches.
+
+  HOW THE AGENT USES THIS FILE
+    1. Open + read this file before generating wireframes.
+    2. Copy the <style> block verbatim into each wireframe HTML.
+       (This file has two <style> blocks: always copy the main one, which has no id; copy <style id="mobile"> only when feature.json.platform == "mobile".)
+       (Inline-only, per html-conventions.md — no external CSS.)
+    3. Pick the matching component below, copy the markup, fill
+       with realistic spec copy (no Lorem ipsum).
+    4. Keep the `<!-\- usage / a11y / data / interaction -\->` hints
+       — frontend-dev reads them downstream.
+
+  ACCESSIBILITY DEFAULTS BAKED IN
+    - All interactive elements have visible focus rings (dashed,
+      not subtle outlines that disappear under sketchy borders).
+    - Form fields always pair <label> + control via `for`/`id`.
+    - Color is never the sole signal: alerts/errors use icon +
+      text + border weight; primary buttons use highlight + bold.
+    - Hit targets ≥ 36px on touch surfaces (buttons, toggles).
+    - Icon-only buttons require `aria-label`.
+    - `aria-current`, `aria-selected`, `aria-expanded`,
+      `aria-live` used where the variant implies state.
+
+  STYLE TOKENS
+    --paper      : page beige
+    --paper-shade: card / subtle bg
+    --ink        : primary stroke + text (high contrast 13:1+)
+    --line       : softer pencil line for separators
+    --muted      : secondary text (still ≥ 4.5:1 on paper)
+    --highlight  : yellow highlighter — use ONLY for "primary"
+                   emphasis (active nav, primary button, current
+                   step, current page). Never decorative.
+    --error / --success / --warn: semantic only.
+
+  WHEN TO PICK WHICH ELEMENT
+    Scan the section headings (h2) below. Each section opens with
+    a "When to use" note. If the spec describes a state (loading,
+    empty, error), use the matching state component — do not
+    invent a new pattern.
+-->
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Kalam:wght@300;400;700&display=swap");
+
+      :root {
+        --paper: #f4ecd8;
+        --paper-shade: #ede2c4;
+        --ink: #2a2a2a;
+        --ink-soft: #4a4a4a;
+        --muted: #6f6346;
+        --line: #8a7a55;
+        --highlight: #ffe680;
+        --error: #b8392b;
+        --success: #4a7a3a;
+        --warn: #c08a2a;
+        --error-bg: #f1c9c4;
+        --success-bg: #d8e7c8;
+        --warn-bg: #f7e3ad;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--paper);
+        background-image:
+          radial-gradient(
+            ellipse at 18% 8%,
+            rgba(0, 0, 0, 0.04),
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse at 82% 92%,
+            rgba(0, 0, 0, 0.05),
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse at 50% 50%,
+            rgba(255, 255, 255, 0.18),
+            transparent 70%
+          );
+        color: var(--ink);
+        font-family:
+          "Kalam", "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+        font-size: 18px;
+        line-height: 1.5;
+        padding: 40px 24px 80px;
+      }
+
+      .lib {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .section {
+        margin: 0 0 64px;
+      }
+      .section > h2 {
+        margin-top: 0;
+      }
+      .section .when {
+        background: rgba(255, 255, 255, 0.4);
+        border-left: 3px dashed var(--line);
+        padding: 10px 14px;
+        font-size: 16px;
+        margin: 0 0 20px;
+        color: var(--ink-soft);
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Caveat", "Bradley Hand", cursive;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 0.4em;
+        letter-spacing: 0.4px;
+      }
+      h1 {
+        font-size: 56px;
+        line-height: 1.05;
+      }
+      h2 {
+        font-size: 38px;
+        padding-bottom: 6px;
+        border-bottom: 2px dashed var(--line);
+      }
+      h3 {
+        font-size: 26px;
+        margin-top: 28px;
+      }
+      h4 {
+        font-size: 20px;
+        font-family: "Kalam", cursive;
+        font-weight: 700;
+      }
+
+      p {
+        margin: 0 0 0.8em;
+      }
+      small {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      a {
+        color: var(--ink);
+        text-decoration: underline wavy var(--line);
+        text-underline-offset: 3px;
+      }
+      a:focus-visible {
+        outline: 3px dashed var(--ink);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      hr {
+        border: 0;
+        border-top: 2px dashed var(--line);
+        margin: 28px 0;
+      }
+
+      ::selection {
+        background: var(--highlight);
+        color: var(--ink);
+      }
+
+      /* -------- demo scaffolding (NOT for wireframes — only for this library file) -------- */
+      .demo {
+        background: rgba(255, 255, 255, 0.45);
+        border: 1.5px dashed var(--line);
+        border-radius: 14px 18px 16px 20px / 18px 14px 20px 16px;
+        padding: 18px;
+        margin-bottom: 18px;
+      }
+      .demo > h4 {
+        margin: 0 0 12px;
+      }
+      .demo .stage {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .demo .stage--col {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .demo .note {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 12px 0 0;
+        font-family: "Kalam", monospace;
+      }
+
+      /* ============================================================
+   SHARED: sketchy-edge utility
+   ------------------------------------------------------------
+   Asymmetric border-radius gives a hand-drawn feel without JS.
+   Apply with the `.sk` modifier; vary by element to avoid the
+   "everything is the same shape" trap.
+   ============================================================ */
+      .sk {
+        border-radius: 14px 18px 16px 20px / 18px 14px 20px 16px;
+      }
+      .sk-sm {
+        border-radius: 8px 12px 10px 14px / 12px 8px 14px 10px;
+      }
+      .sk-pill {
+        border-radius: 22px 28px 26px 24px / 26px 22px 24px 28px;
+      }
+
+      /* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+      .t-display {
+        font-family: "Caveat", cursive;
+        font-size: 56px;
+        font-weight: 700;
+        line-height: 1.05;
+      }
+      .t-title {
+        font-family: "Caveat", cursive;
+        font-size: 38px;
+        font-weight: 700;
+      }
+      .t-subtitle {
+        font-family: "Caveat", cursive;
+        font-size: 26px;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+      .t-body {
+        font-size: 18px;
+      }
+      .t-caption {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .t-kbd {
+        font-family: "Kalam", monospace;
+        font-size: 14px;
+        border: 1.5px solid var(--ink);
+        padding: 1px 6px;
+        border-radius: 4px 7px 5px 6px;
+        background: var(--paper);
+      }
+
+      /* ============================================================
+   BUTTONS
+   ============================================================ */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 6px 18px;
+        font-family: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--ink);
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 12px 18px 14px 20px / 18px 12px 20px 14px;
+        box-shadow: 2px 2px 0 var(--ink);
+        cursor: pointer;
+        transition:
+          transform 0.05s ease,
+          box-shadow 0.05s ease;
+        text-decoration: none;
+      }
+      .btn:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .btn:active {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 var(--ink);
+      }
+      .btn:focus-visible {
+        outline: 3px dashed var(--ink);
+        outline-offset: 3px;
+      }
+      .btn--primary {
+        background: var(--highlight);
+      }
+      .btn--ghost {
+        background: transparent;
+        box-shadow: none;
+      }
+      .btn--ghost:hover {
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .btn--danger {
+        background: var(--error);
+        color: var(--paper);
+      }
+      .btn--icon {
+        width: 40px;
+        padding: 0;
+      }
+      .btn[disabled],
+      .btn[aria-disabled="true"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      /* ============================================================
+   FORM FIELDS
+   ============================================================ */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 14px;
+      }
+      .field > label {
+        font-weight: 700;
+      }
+      .field .hint {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .field .err {
+        font-size: 13px;
+        color: var(--error);
+        font-weight: 700;
+      }
+
+      .input,
+      .textarea,
+      .select {
+        font-family: inherit;
+        font-size: 17px;
+        color: var(--ink);
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 8px 14px 10px 12px / 12px 8px 14px 10px;
+        padding: 8px 12px;
+        width: 100%;
+        min-height: 40px;
+      }
+      .input::placeholder,
+      .textarea::placeholder {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .input:focus,
+      .textarea:focus,
+      .select:focus {
+        outline: 3px dashed var(--line);
+        outline-offset: 2px;
+      }
+      .input--error,
+      .textarea--error {
+        border-color: var(--error);
+      }
+      .textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .select {
+        appearance: none;
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+          linear-gradient(-45deg, transparent 50%, var(--ink) 50%);
+        background-position:
+          calc(100% - 18px) 50%,
+          calc(100% - 12px) 50%;
+        background-size: 6px 6px;
+        background-repeat: no-repeat;
+        padding-right: 32px;
+      }
+
+      /* checkbox + radio */
+      .check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .check input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+      .check .box {
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--ink);
+        border-radius: 4px 7px 5px 6px;
+        background: var(--paper);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .check input:checked + .box::after {
+        content: "✓";
+        font-family: "Caveat", cursive;
+        font-size: 22px;
+        line-height: 1;
+        color: var(--ink);
+      }
+      .check input:focus-visible + .box {
+        outline: 3px dashed var(--line);
+        outline-offset: 2px;
+      }
+      .radio .box {
+        border-radius: 50%;
+      }
+      .radio input:checked + .box::after {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background: var(--ink);
+        border-radius: 50%;
+      }
+
+      /* toggle */
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .toggle input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+      .toggle .track {
+        width: 48px;
+        height: 26px;
+        border: 2px solid var(--ink);
+        background: var(--paper);
+        border-radius: 14px 16px 14px 16px;
+        position: relative;
+        flex: none;
+      }
+      .toggle .track::after {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        width: 18px;
+        height: 18px;
+        background: var(--ink);
+        border-radius: 50%;
+        transition: left 0.15s ease;
+      }
+      .toggle input:checked + .track {
+        background: var(--highlight);
+      }
+      .toggle input:checked + .track::after {
+        left: 24px;
+      }
+      .toggle input:focus-visible + .track {
+        outline: 3px dashed var(--line);
+        outline-offset: 2px;
+      }
+
+      /* search */
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 2px solid var(--ink);
+        padding: 6px 14px;
+        border-radius: 22px 28px 26px 24px;
+        background: var(--paper);
+        min-height: 40px;
+      }
+      .search input {
+        border: 0;
+        background: transparent;
+        font-family: inherit;
+        font-size: 17px;
+        flex: 1;
+        outline: none;
+        color: var(--ink);
+      }
+      .search:focus-within {
+        outline: 3px dashed var(--line);
+        outline-offset: 2px;
+      }
+
+      /* file */
+      .file-drop {
+        border: 2px dashed var(--line);
+        background: rgba(255, 255, 255, 0.35);
+        border-radius: 14px 18px 16px 20px;
+        padding: 22px;
+        text-align: center;
+      }
+
+      /* ============================================================
+   FEEDBACK / STATUS
+   ============================================================ */
+      .alert {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 12px 16px;
+        border: 2px solid var(--ink);
+        border-radius: 10px 16px 12px 14px;
+        background: var(--paper-shade);
+      }
+      .alert .icon {
+        font-family: "Caveat", cursive;
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 700;
+      }
+      .alert--success {
+        background: var(--success-bg);
+      }
+      .alert--warn {
+        background: var(--warn-bg);
+      }
+      .alert--error {
+        background: var(--error-bg);
+      }
+      .alert h4 {
+        margin: 0 0 2px;
+      }
+      .alert p {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .toast {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 10px 16px;
+        border-radius: 12px 16px 14px 18px;
+        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+        font-size: 16px;
+      }
+      .toast .icon {
+        font-family: "Caveat", cursive;
+        font-size: 22px;
+      }
+
+      /* ============================================================
+   BADGES, TAGS, AVATARS
+   ============================================================ */
+      .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border: 1.5px solid var(--ink);
+        border-radius: 8px 14px 10px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        background: var(--paper);
+        line-height: 1.6;
+      }
+      .badge--accent {
+        background: var(--highlight);
+      }
+      .badge--danger {
+        background: var(--error-bg);
+      }
+      .badge--success {
+        background: var(--success-bg);
+      }
+
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: var(--paper-shade);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Caveat", cursive;
+        font-size: 20px;
+        font-weight: 700;
+        flex: none;
+      }
+      .avatar--lg {
+        width: 56px;
+        height: 56px;
+        font-size: 26px;
+      }
+
+      /* ============================================================
+   CARDS
+   ============================================================ */
+      .card {
+        background: rgba(255, 255, 255, 0.55);
+        border: 2px solid var(--ink);
+        border-radius: 14px 18px 16px 20px / 18px 14px 20px 16px;
+        padding: 18px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .card .title {
+        font-family: "Caveat", cursive;
+        font-size: 26px;
+        margin: 0 0 6px;
+      }
+      .card .meta {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .card .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      /* ============================================================
+   LISTS / TABLES
+   ============================================================ */
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .list li {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1.5px dashed var(--line);
+      }
+      .list li:last-child {
+        border-bottom: 0;
+      }
+      .list .grow {
+        flex: 1;
+      }
+
+      .tbl {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 16px;
+      }
+      .tbl th,
+      .tbl td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1.5px dashed var(--line);
+      }
+      .tbl th {
+        font-family: "Caveat", cursive;
+        font-size: 22px;
+        font-weight: 700;
+        border-bottom: 2px solid var(--ink);
+      }
+
+      /* ============================================================
+   NAVIGATION
+   ============================================================ */
+      .nav-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 18px;
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px solid var(--ink);
+        border-radius: 14px 18px 16px 20px;
+      }
+      .nav-top .brand {
+        font-family: "Caveat", cursive;
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .nav-top ul {
+        display: flex;
+        gap: 4px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .nav-top a {
+        padding: 4px 10px;
+        text-decoration: none;
+        border-radius: 6px 10px 8px 12px;
+      }
+      .nav-top a[aria-current="page"] {
+        background: var(--highlight);
+        font-weight: 700;
+      }
+      .nav-top a:focus-visible {
+        outline: 3px dashed var(--ink);
+        outline-offset: 2px;
+      }
+
+      .side-nav {
+        width: 220px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.45);
+        border: 2px solid var(--ink);
+        border-radius: 14px 18px 16px 20px;
+      }
+      .side-nav .section-label {
+        font-family: "Caveat", cursive;
+        font-size: 20px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 4px 0 6px;
+      }
+      .side-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .side-nav a {
+        display: block;
+        padding: 6px 10px;
+        text-decoration: none;
+        border-radius: 6px 10px 8px 12px;
+      }
+      .side-nav a[aria-current="page"] {
+        background: var(--highlight);
+        font-weight: 700;
+      }
+
+      .crumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0;
+        margin: 0;
+        font-size: 16px;
+        color: var(--muted);
+      }
+      .crumbs li {
+        list-style: none;
+      }
+      .crumbs li::after {
+        content: "›";
+        margin-left: 8px;
+        color: var(--line);
+      }
+      .crumbs li:last-child::after {
+        content: "";
+      }
+      .crumbs li:last-child {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px dashed var(--line);
+        margin-bottom: 16px;
+      }
+      .tabs .tab {
+        padding: 6px 14px;
+        font-weight: 700;
+        font-size: 17px;
+        background: transparent;
+        color: var(--ink);
+        border: 2px solid transparent;
+        border-radius: 10px 14px 0 0;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .tabs .tab[aria-selected="true"] {
+        background: var(--paper);
+        border-color: var(--ink);
+        border-bottom-color: var(--paper);
+        margin-bottom: -2px;
+      }
+      .tabs .tab:focus-visible {
+        outline: 3px dashed var(--ink);
+        outline-offset: 2px;
+      }
+
+      .pager {
+        display: inline-flex;
+        gap: 4px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      .pager .page {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 2px solid var(--ink);
+        border-radius: 8px 12px 10px 14px;
+        background: var(--paper);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .pager .page[aria-current="page"] {
+        background: var(--highlight);
+      }
+      .pager .page[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .stepper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .stepper .step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+      }
+      .stepper .step .dot {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        background: var(--paper);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Caveat", cursive;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .stepper .step--active {
+        color: var(--ink);
+      }
+      .stepper .step--active .dot {
+        border-color: var(--ink);
+        background: var(--highlight);
+      }
+      .stepper .step--done .dot {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .stepper .line {
+        flex: 0 1 30px;
+        height: 0;
+        border-top: 2px dashed var(--line);
+      }
+
+      /* ============================================================
+   CONTAINERS (modal / drawer / accordion / tooltip)
+   ============================================================ */
+      .modal-shell {
+        background: rgba(0, 0, 0, 0.18);
+        padding: 30px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal {
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 16px 22px 18px 20px;
+        padding: 22px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .modal h4 {
+        font-family: "Caveat", cursive;
+        font-size: 28px;
+        margin: 0 0 10px;
+      }
+      .modal .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+
+      .drawer-shell {
+        display: flex;
+        height: 220px;
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .drawer {
+        width: 200px;
+        padding: 14px;
+        border-right: 2px dashed var(--line);
+        background: rgba(255, 255, 255, 0.45);
+      }
+      .drawer-content {
+        flex: 1;
+        padding: 14px;
+      }
+
+      details.acc {
+        border: 2px solid var(--ink);
+        border-radius: 12px 16px 14px 18px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.4);
+        margin-bottom: 8px;
+      }
+      details.acc > summary {
+        font-family: "Caveat", cursive;
+        font-size: 22px;
+        font-weight: 700;
+        cursor: pointer;
+        list-style: none;
+      }
+      details.acc > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.acc > summary::before {
+        content: "+ ";
+        color: var(--muted);
+      }
+      details.acc[open] > summary::before {
+        content: "− ";
+      }
+      details.acc[open] > summary {
+        margin-bottom: 8px;
+      }
+      details.acc > summary:focus-visible {
+        outline: 3px dashed var(--ink);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+
+      .tooltip {
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 14px;
+        padding: 4px 10px;
+        border-radius: 6px 10px 8px 12px;
+        display: inline-block;
+        font-family: inherit;
+      }
+
+      /* ============================================================
+   STATES — loading / empty / progress / placeholder
+   ============================================================ */
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          var(--paper-shade) 0%,
+          rgba(0, 0, 0, 0.06) 50%,
+          var(--paper-shade) 100%
+        );
+        border-radius: 6px 10px 8px 12px;
+        height: 14px;
+        width: 80%;
+        animation: skeleton-pulse 1.6s ease-in-out infinite;
+      }
+      .skeleton--lg {
+        height: 22px;
+      }
+      .skeleton--block {
+        height: 80px;
+        width: 100%;
+      }
+      .skeleton--circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+      }
+      @keyframes skeleton-pulse {
+        50% {
+          opacity: 0.5;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skeleton {
+          animation: none;
+        }
+      }
+
+      .progress {
+        height: 18px;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 8px 12px 10px 14px;
+        overflow: hidden;
+      }
+      .progress .bar {
+        height: 100%;
+        background: var(--highlight);
+        border-right: 2px solid var(--ink);
+      }
+
+      .empty {
+        text-align: center;
+        padding: 40px 20px;
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .empty .glyph {
+        font-family: "Caveat", cursive;
+        font-size: 64px;
+        line-height: 1;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .placeholder {
+        border: 2px dashed var(--line);
+        background: repeating-linear-gradient(
+          -45deg,
+          rgba(0, 0, 0, 0) 0 8px,
+          rgba(0, 0, 0, 0.04) 8px 9px
+        );
+        padding: 16px;
+        text-align: center;
+        color: var(--muted);
+        border-radius: 10px 14px 12px 16px;
+        font-style: italic;
+      }
+      .placeholder--image {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .placeholder--image::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        background:
+          linear-gradient(
+            to top right,
+            transparent calc(50% - 1px),
+            var(--line) 50%,
+            transparent calc(50% + 1px)
+          ),
+          linear-gradient(
+            to top left,
+            transparent calc(50% - 1px),
+            var(--line) 50%,
+            transparent calc(50% + 1px)
+          );
+        opacity: 0.5;
+      }
+      .placeholder--image span {
+        position: relative;
+        background: var(--paper);
+        padding: 2px 8px;
+      }
+
+      /* ============================================================
+   HELPERS / LAYOUT
+   ============================================================ */
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .stack > * + * {
+        margin-top: 12px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .right {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .grow {
+        flex: 1;
+      }
+      .cols-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .cols-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* TOC for THIS reference page only */
+      .toc {
+        background: rgba(255, 255, 255, 0.6);
+        padding: 14px 18px;
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        margin-bottom: 32px;
+        font-size: 16px;
+      }
+      .toc h4 {
+        margin: 0 0 6px;
+      }
+      .toc ul {
+        columns: 2;
+        padding-left: 18px;
+        margin: 0;
+      }
+      @media (max-width: 640px) {
+        .toc ul {
+          columns: 1;
+        }
+      }
+    </style>
+    <style id="mobile">
+      /* =========================================================
+         MOBILE — phone frame, stack header, list rows, tab bar,
+         bottom sheet, modal, safe-area hint, primary CTA.
+         Copy this block only when feature.json.platform == "mobile".
+         ========================================================= */
+      .screens {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+      }
+      .phone {
+        width: 390px;
+        min-height: 780px;
+        border: 3px solid var(--ink);
+        border-radius: 44px 40px 46px 42px;
+        background: var(--paper);
+        padding: 18px 16px 22px;
+        box-shadow: 4px 5px 0 var(--ink);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .phone-caption {
+        font-family: "Caveat", cursive;
+        font-size: 22px;
+        margin: 0 0 6px;
+      }
+      .safe-area {
+        min-height: 28px;
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .stack-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 48px;
+      }
+      .stack-header h3 {
+        margin: 0;
+        font-family: "Caveat", cursive;
+        font-size: 26px;
+        flex: 1;
+        text-align: center;
+      }
+      .icon-btn-lg {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: #fff;
+        box-shadow: 2px 3px 0 var(--ink);
+        font: inherit;
+        font-size: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .list-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 56px;
+        padding: 10px 14px;
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        background: #fff;
+      }
+      .list-row + .list-row {
+        margin-top: 8px;
+      }
+      .list-row__title {
+        flex: 1;
+        font-size: 17px;
+      }
+      .list-row__meta {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .cta-pill {
+        min-height: 56px;
+        width: 100%;
+        border-radius: 999px;
+        border: 2.5px solid var(--ink);
+        background: var(--highlight);
+        box-shadow: 3px 4px 0 var(--ink);
+        font-family: "Caveat", cursive;
+        font-size: 26px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .cta-pill--secondary {
+        background: #fff;
+      }
+      .tab-bar {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-around;
+        border-top: 2px solid var(--ink);
+        padding-top: 8px;
+      }
+      .tab-bar__item {
+        flex: 1;
+        min-height: 48px;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 13px;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        cursor: pointer;
+      }
+      .tab-bar__item[aria-current="page"] {
+        color: var(--ink);
+        font-weight: 700;
+        background: var(--highlight);
+        border-radius: 12px;
+      }
+      .sheet {
+        margin-top: auto;
+        border: 3px solid var(--ink);
+        border-radius: 26px 26px 0 0;
+        background: #fff;
+        padding: 10px 16px 18px;
+        box-shadow: 0 -4px 0 var(--paper-shade);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .sheet__grabber {
+        width: 44px;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--line);
+        align-self: center;
+      }
+      .modal-sheet {
+        margin: auto 0;
+        border: 3px solid var(--ink);
+        border-radius: 22px;
+        background: #fff;
+        padding: 18px 16px;
+        box-shadow: 4px 5px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: rgba(42, 42, 42, 0.35);
+        pointer-events: none;
+      }
+      .phone-hint {
+        font-size: 13px;
+        color: var(--muted);
+        border-left: 3px dashed var(--line);
+        padding-left: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="lib">
+      <header style="margin-bottom: 32px">
+        <h1>Wireframe Component Library</h1>
+        <p class="t-subtitle">
+          Paper sketch · pencil tone · for the <code>wireframer</code> skill
+        </p>
+        <p class="muted">
+          Copy the <code>&lt;style&gt;</code> block above into every wireframe.
+          Pick markup from the sections below. Comments on each block are
+          written for the agent — keep them when copying.
+        </p>
+      </header>
+
+      <nav class="toc" aria-label="Component index">
+        <h4>Sections</h4>
+        <ul>
+          <li><a href="#typography">Typography</a></li>
+          <li><a href="#buttons">Buttons</a></li>
+          <li><a href="#fields">Form fields</a></li>
+          <li><a href="#feedback">Alerts &amp; toasts</a></li>
+          <li><a href="#badges">Badges &amp; avatars</a></li>
+          <li><a href="#cards">Cards</a></li>
+          <li><a href="#lists">Lists &amp; tables</a></li>
+          <li><a href="#nav">Navigation</a></li>
+          <li>
+            <a href="#containers">Modals, drawers, accordions, tooltips</a>
+          </li>
+          <li><a href="#states">States — loading, empty, progress</a></li>
+          <li><a href="#placeholders">Placeholders</a></li>
+          <li><a href="#mobile">Mobile</a></li>
+        </ul>
+      </nav>
+
+      <!-- =========================================================
+       TYPOGRAPHY
+       ========================================================= -->
+      <section class="section" id="typography">
+        <h2>Typography</h2>
+        <p class="when">
+          When to use: every wireframe. Use <code>h1</code> for page title,
+          <code>h2</code> for section, <code>h3</code> for subsection. Body copy
+          at 18px. Hand-written display font is reserved for headings + the
+          brand mark — never run paragraphs in <em>Caveat</em>, it hurts
+          readability.
+        </p>
+
+        <div class="demo">
+          <h4>Scale</h4>
+          <div class="stage stack" style="display: block">
+            <!-- usage: page title; only one h1 per screen -->
+            <div class="t-display">Page title (h1)</div>
+            <!-- usage: section header inside a screen -->
+            <div class="t-title">Section title (h2)</div>
+            <!-- usage: subsection or card title -->
+            <div class="t-subtitle">Subsection (h3)</div>
+            <!-- usage: body paragraph; default text size -->
+            <p class="t-body">
+              Body copy. Use realistic content from the spec — not Lorem ipsum.
+            </p>
+            <!-- usage: secondary text (timestamps, hints, metadata) -->
+            <p class="t-caption">Caption / metadata · 14px muted</p>
+            <!-- usage: keyboard shortcut hints -->
+            <p>
+              Press <span class="t-kbd">Esc</span> to close,
+              <span class="t-kbd">Enter</span> to submit.
+            </p>
+          </div>
+          <p class="note">
+            a11y: keep paragraph text in Kalam (legible), not Caveat. Caveat is
+            decorative — fine for headings, never below 22px.
+          </p>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       BUTTONS
+       ========================================================= -->
+      <section class="section" id="buttons">
+        <h2>Buttons</h2>
+        <p class="when">
+          When to use: every interactive trigger that submits, navigates, or
+          opens a flyout. Exactly
+          <strong>one primary button per view</strong> (the desired path).
+          Everything else is secondary or ghost. Destructive actions use the
+          danger variant.
+        </p>
+
+        <div class="demo">
+          <h4>Variants</h4>
+          <div class="stage">
+            <!-- usage: primary action — exactly one per view -->
+            <button class="btn btn--primary" type="button">Save changes</button>
+            <!-- usage: secondary action sitting next to primary -->
+            <button class="btn" type="button">Cancel</button>
+            <!-- usage: tertiary / inline action — no shadow, no fill -->
+            <button class="btn btn--ghost" type="button">Learn more</button>
+            <!-- usage: irreversible / destructive (delete, leave, revoke) -->
+            <button class="btn btn--danger" type="button">
+              Delete account
+            </button>
+            <!-- usage: disabled state — pair with explanation nearby; never disable without telling the user why -->
+            <button class="btn btn--primary" type="button" disabled>
+              Submit
+            </button>
+            <!-- usage: icon-only — REQUIRES aria-label; min 40×40 hit target -->
+            <button
+              class="btn btn--icon"
+              type="button"
+              aria-label="Close dialog"
+            >
+              ✕
+            </button>
+          </div>
+          <p class="note">
+            a11y: focus ring = dashed 3px ink, offset 3px. min-height 40px.
+            icon-only buttons must have aria-label. disabled buttons keep their
+            text — never just hide them.
+          </p>
+        </div>
+
+        <div class="demo">
+          <h4>Sizes &amp; widths</h4>
+          <div class="stage stack" style="display: block">
+            <!-- usage: full-width button — typical inside forms / mobile primary CTA -->
+            <button class="btn btn--primary" type="button" style="width: 100%">
+              Continue
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       FORM FIELDS
+       ========================================================= -->
+      <section class="section" id="fields">
+        <h2>Form fields</h2>
+        <p class="when">
+          When to use: any data entry. Always pair <code>&lt;label&gt;</code> +
+          control via <code>for</code>/<code>id</code>. Required fields are
+          marked with “(required)” in the label — do <strong>not</strong> use a
+          red asterisk alone (color-only signal).
+        </p>
+
+        <div class="demo">
+          <h4>Text input — default, with hint, with error</h4>
+          <div class="stage stack" style="display: block; max-width: 380px">
+            <!-- usage: standard text input with hint -->
+            <div class="field">
+              <label for="lib-email">Email address</label>
+              <input
+                class="input sk-sm"
+                id="lib-email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+              />
+              <span class="hint">We’ll send a verification link.</span>
+            </div>
+
+            <!-- usage: error state — red border + text icon "!" + role="alert" message -->
+            <!-- a11y: aria-invalid on the input, aria-describedby pointing at the error id -->
+            <div class="field">
+              <label for="lib-email-err">Email address</label>
+              <input
+                class="input input--error sk-sm"
+                id="lib-email-err"
+                type="email"
+                value="not-an-email"
+                aria-invalid="true"
+                aria-describedby="lib-email-err-msg"
+              />
+              <span class="err" id="lib-email-err-msg" role="alert"
+                >! Enter a valid email — we use it to sign you in.</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Textarea, select, search</h4>
+          <div class="stage stack" style="display: block; max-width: 380px">
+            <!-- usage: multi-line input -->
+            <div class="field">
+              <label for="lib-msg">Message</label>
+              <textarea
+                class="textarea sk-sm"
+                id="lib-msg"
+                rows="3"
+                placeholder="Tell us what happened…"
+              ></textarea>
+            </div>
+
+            <!-- usage: select. Native <select> for accessibility — don't fake one -->
+            <div class="field">
+              <label for="lib-country">Country</label>
+              <select class="select sk-sm" id="lib-country">
+                <option>Ukraine</option>
+                <option>Poland</option>
+                <option>Germany</option>
+              </select>
+            </div>
+
+            <!-- usage: top-bar search box -->
+            <!-- a11y: type="search", visible <label> or aria-label -->
+            <label class="search sk-pill" for="lib-search">
+              <span aria-hidden="true">🔍</span>
+              <input
+                id="lib-search"
+                type="search"
+                placeholder="Search projects…"
+                aria-label="Search projects"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Checkbox, radio, toggle</h4>
+          <div class="stage stack" style="display: block">
+            <!-- usage: independent boolean — checkbox -->
+            <label class="check">
+              <input type="checkbox" checked />
+              <span class="box"></span>
+              <span>Email me a weekly summary</span>
+            </label>
+
+            <!-- usage: mutually exclusive choice — radio group; wrap in <fieldset><legend> for the group label -->
+            <fieldset style="border: 0; padding: 0; margin: 0">
+              <legend style="font-weight: 700; margin-bottom: 6px">Plan</legend>
+              <label class="check radio" style="margin-right: 14px">
+                <input type="radio" name="lib-plan" checked />
+                <span class="box"></span>
+                <span>Free</span>
+              </label>
+              <label class="check radio">
+                <input type="radio" name="lib-plan" />
+                <span class="box"></span>
+                <span>Pro · $12/mo</span>
+              </label>
+            </fieldset>
+
+            <!-- usage: instant on/off setting (saves immediately, no submit) -->
+            <!-- a11y: role="switch" implied by <input type="checkbox"> + visible label state -->
+            <label class="toggle">
+              <input type="checkbox" role="switch" checked />
+              <span class="track"></span>
+              <span>Notifications: <strong>On</strong></span>
+            </label>
+          </div>
+          <p class="note">
+            a11y: never make state visible only via the track color. Always
+            include the textual state ("On"/"Off") next to a toggle.
+          </p>
+        </div>
+
+        <div class="demo">
+          <h4>File upload (drop zone)</h4>
+          <!-- usage: file upload placeholder; in real app pair with <input type="file"> -->
+          <label class="file-drop" for="lib-file">
+            <strong>Drop a file here</strong> or <u>browse</u>
+            <p class="muted" style="margin: 6px 0 0">PNG, JPG up to 5 MB</p>
+            <input
+              id="lib-file"
+              type="file"
+              style="position: absolute; left: -9999px"
+            />
+          </label>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       FEEDBACK
+       ========================================================= -->
+      <section class="section" id="feedback">
+        <h2>Alerts &amp; toasts</h2>
+        <p class="when">
+          When to use: communicate the result of an action or system status.
+          <strong>Alerts</strong> stay on the page until dismissed/resolved.
+          <strong>Toasts</strong> auto-dismiss (typically 4–6s) and announce a
+          transient event. Use exactly the icon + color + text triple — never
+          color alone.
+        </p>
+
+        <div class="demo">
+          <h4>Inline alerts</h4>
+          <div class="stage stack" style="display: block">
+            <!-- usage: success — confirms an action succeeded -->
+            <!-- a11y: role="status", aria-live="polite" -->
+            <div class="alert alert--success" role="status" aria-live="polite">
+              <span class="icon" aria-hidden="true">✓</span>
+              <div>
+                <h4>Saved</h4>
+                <p>Your changes were saved 2 seconds ago.</p>
+              </div>
+            </div>
+
+            <!-- usage: warning — non-blocking concern user should know about -->
+            <div class="alert alert--warn" role="status" aria-live="polite">
+              <span class="icon" aria-hidden="true">!</span>
+              <div>
+                <h4>Heads up</h4>
+                <p>
+                  Your trial ends in 3 days.
+                  <a href="#">Add a payment method</a>.
+                </p>
+              </div>
+            </div>
+
+            <!-- usage: error — action failed; tell user what + how to fix -->
+            <!-- a11y: role="alert" so it interrupts SR users -->
+            <div class="alert alert--error" role="alert">
+              <span class="icon" aria-hidden="true">×</span>
+              <div>
+                <h4>Couldn’t save</h4>
+                <p>
+                  The connection dropped. <a href="#">Retry</a> or check your
+                  network.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Toast (transient)</h4>
+          <!-- usage: brief confirmation that auto-dismisses; bottom-right typical placement -->
+          <!-- a11y: role="status" aria-live="polite" — never role="alert" for routine confirmations -->
+          <div class="stage">
+            <div class="toast" role="status" aria-live="polite">
+              <span class="icon" aria-hidden="true">✓</span>
+              <span>Invite sent to alex@team.io</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       BADGES, TAGS, AVATARS
+       ========================================================= -->
+      <section class="section" id="badges">
+        <h2>Badges &amp; avatars</h2>
+        <p class="when">
+          When to use: short status, count, or category labels. Avatars
+          represent people/orgs. Keep badge text under 2 words.
+        </p>
+
+        <div class="demo">
+          <h4>Badges</h4>
+          <div class="stage">
+            <!-- usage: neutral status / category -->
+            <span class="badge">Draft</span>
+            <!-- usage: highlight current selection / “new” / featured -->
+            <span class="badge badge--accent">New</span>
+            <!-- usage: success state inline (e.g., "Active", "Verified") -->
+            <span class="badge badge--success">Verified</span>
+            <!-- usage: error/blocked status -->
+            <span class="badge badge--danger">Failed</span>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Avatars</h4>
+          <div class="stage">
+            <!-- usage: initials avatar — fallback for missing photo. aria-label spells the full name -->
+            <span class="avatar" aria-label="Olena Kovalenko">OK</span>
+            <span class="avatar avatar--lg" aria-label="Marko Bilyk">MB</span>
+            <!-- usage: stack of collaborators — wrap in a list with aria-label -->
+            <ul
+              class="row"
+              style="list-style: none; padding: 0; margin: 0"
+              aria-label="3 collaborators"
+            >
+              <li><span class="avatar" aria-label="Anna">A</span></li>
+              <li style="margin-left: -8px">
+                <span class="avatar" aria-label="Boris">B</span>
+              </li>
+              <li style="margin-left: -8px">
+                <span class="avatar" aria-label="Clara">C</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       CARDS
+       ========================================================= -->
+      <section class="section" id="cards">
+        <h2>Cards</h2>
+        <p class="when">
+          When to use: each item in a collection (project, message, person).
+          Card title links/buttons go in <code>.actions</code>, never the whole
+          card — wrapping a card in <code>&lt;a&gt;</code> defeats inner
+          controls.
+        </p>
+
+        <div class="demo">
+          <h4>Standard card</h4>
+          <div class="cols-2">
+            <!-- component: ProjectCard -->
+            <!-- data: { title: string, description: string, status: 'draft'|'live', updatedAt: ISODate } -->
+            <article class="card">
+              <h3 class="title">Onboarding revamp</h3>
+              <p class="meta">
+                Updated 3 hours ago ·
+                <span class="badge badge--accent">In review</span>
+              </p>
+              <p>
+                Reduce signup drop-off in step 2 by collapsing optional fields.
+              </p>
+              <div class="actions">
+                <button class="btn btn--primary" type="button">Open</button>
+                <button class="btn btn--ghost" type="button">Archive</button>
+              </div>
+            </article>
+            <!-- /component -->
+
+            <article class="card">
+              <h3 class="title">Search v2</h3>
+              <p class="meta">
+                Updated yesterday · <span class="badge">Draft</span>
+              </p>
+              <p>Move filters above the results list; add saved searches.</p>
+              <div class="actions">
+                <button class="btn" type="button">Continue</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       LISTS & TABLES
+       ========================================================= -->
+      <section class="section" id="lists">
+        <h2>Lists &amp; tables</h2>
+        <p class="when">
+          When to use: <strong>list</strong> for simple repeating items (≤ 2
+          properties shown). <strong>Table</strong> when rows have ≥ 3
+          comparable columns; always include
+          <code>&lt;th scope="col"&gt;</code>.
+        </p>
+
+        <div class="demo">
+          <h4>Item list</h4>
+          <!-- data: { title: string, meta: string }[] -->
+          <ul class="list">
+            <li>
+              <span class="avatar" aria-label="Sofia">S</span>
+              <span class="grow"
+                ><strong>Sofia Marin</strong><br /><small
+                  >Joined yesterday</small
+                ></span
+              >
+              <button
+                class="btn btn--ghost"
+                type="button"
+                aria-label="More actions for Sofia"
+              >
+                ⋯
+              </button>
+            </li>
+            <li>
+              <span class="avatar" aria-label="Daniel">D</span>
+              <span class="grow"
+                ><strong>Daniel Werner</strong><br /><small
+                  >Joined 4 days ago</small
+                ></span
+              >
+              <button
+                class="btn btn--ghost"
+                type="button"
+                aria-label="More actions for Daniel"
+              >
+                ⋯
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="demo">
+          <h4>Data table</h4>
+          <!-- data: { name, email, role, status }[] -->
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" style="font-family: inherit; font-size: 16px">
+                  Sofia Marin
+                </th>
+                <td>sofia@team.io</td>
+                <td>Admin</td>
+                <td><span class="badge badge--success">Active</span></td>
+              </tr>
+              <tr>
+                <th scope="row" style="font-family: inherit; font-size: 16px">
+                  Daniel Werner
+                </th>
+                <td>dan@team.io</td>
+                <td>Editor</td>
+                <td><span class="badge">Invited</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       NAVIGATION
+       ========================================================= -->
+      <section class="section" id="nav">
+        <h2>Navigation</h2>
+        <p class="when">
+          When to use: <strong>top nav</strong> for ≤ 5 top-level destinations.
+          <strong>Side nav</strong> when the IA is wider/grouped.
+          <strong>Breadcrumbs</strong> on detail pages 3+ levels deep.
+          <strong>Tabs</strong> for views of the same object.
+          <strong>Pagination</strong> for lists &gt; 25 items. Always mark the
+          current location with <code>aria-current="page"</code>.
+        </p>
+
+        <div class="demo">
+          <h4>Top navigation</h4>
+          <!-- component: TopNav -->
+          <nav class="nav-top" aria-label="Primary">
+            <span class="brand">Sketchpad</span>
+            <ul>
+              <li><a href="#" aria-current="page">Projects</a></li>
+              <li><a href="#">Inbox</a></li>
+              <li><a href="#">Team</a></li>
+              <li><a href="#">Billing</a></li>
+            </ul>
+            <span class="avatar" aria-label="Account: Eugene">E</span>
+          </nav>
+          <!-- /component -->
+        </div>
+
+        <div class="demo">
+          <h4>Side navigation</h4>
+          <div class="row" style="align-items: flex-start">
+            <!-- component: SideNav -->
+            <nav class="side-nav" aria-label="Sections">
+              <p class="section-label">Workspace</p>
+              <ul>
+                <li><a href="#" aria-current="page">Dashboard</a></li>
+                <li><a href="#">Projects</a></li>
+                <li><a href="#">Members</a></li>
+              </ul>
+              <p class="section-label">Account</p>
+              <ul>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Billing</a></li>
+              </ul>
+            </nav>
+            <!-- /component -->
+            <div class="grow muted">
+              ↑ pair with main content area on the right
+            </div>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Breadcrumbs</h4>
+          <!-- a11y: nav with aria-label="Breadcrumb"; mark final crumb with aria-current="page" -->
+          <nav aria-label="Breadcrumb">
+            <ol class="crumbs">
+              <li><a href="#">Projects</a></li>
+              <li><a href="#">Onboarding revamp</a></li>
+              <li aria-current="page">Step 2 — collect details</li>
+            </ol>
+          </nav>
+        </div>
+
+        <div class="demo">
+          <h4>Tabs</h4>
+          <!-- a11y: role="tablist" + role="tab" + aria-selected; tab panels have role="tabpanel" -->
+          <div class="tabs" role="tablist" aria-label="Project sections">
+            <button class="tab" role="tab" aria-selected="true">
+              Overview
+            </button>
+            <button class="tab" role="tab" aria-selected="false">
+              Activity
+            </button>
+            <button class="tab" role="tab" aria-selected="false">
+              Settings
+            </button>
+          </div>
+          <div role="tabpanel" aria-label="Overview">
+            <p>Active tab content goes here.</p>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Pagination</h4>
+          <!-- a11y: nav aria-label="Pagination"; current page aria-current="page" -->
+          <nav aria-label="Pagination">
+            <ul class="pager">
+              <li>
+                <button
+                  class="page"
+                  type="button"
+                  aria-label="Previous page"
+                  disabled
+                >
+                  ‹
+                </button>
+              </li>
+              <li>
+                <button class="page" type="button" aria-current="page">
+                  1
+                </button>
+              </li>
+              <li><button class="page" type="button">2</button></li>
+              <li><button class="page" type="button">3</button></li>
+              <li>
+                <button class="page" type="button" aria-label="Next page">
+                  ›
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="demo">
+          <h4>Stepper (multi-step flow)</h4>
+          <!-- a11y: ol with aria-label; current step aria-current="step"; done steps marked visually + via class -->
+          <ol
+            class="stepper"
+            aria-label="Checkout progress"
+            style="list-style: none; padding: 0; margin: 0"
+          >
+            <li class="step step--done">
+              <span class="dot" aria-hidden="true">✓</span> Cart
+            </li>
+            <li class="line" aria-hidden="true"></li>
+            <li class="step step--active" aria-current="step">
+              <span class="dot">2</span> Shipping
+            </li>
+            <li class="line" aria-hidden="true"></li>
+            <li class="step"><span class="dot">3</span> Payment</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       CONTAINERS
+       ========================================================= -->
+      <section class="section" id="containers">
+        <h2>Modals, drawers, accordions, tooltips</h2>
+        <p class="when">
+          When to use: a modal is a focused interruption — only for tasks that
+          block the underlying flow. A drawer is a side panel for related
+          context. Accordions group long-form chunks (FAQ, settings groups).
+          Tooltips are non-essential hints — never put critical info in a
+          tooltip.
+        </p>
+
+        <div class="demo">
+          <h4>Modal dialog</h4>
+          <!-- component: ConfirmDialog -->
+          <!-- a11y: role="dialog" aria-modal="true"; labelled by the title id; first focusable = primary action; trap focus while open; Esc closes; restore focus to opener on close -->
+          <div class="modal-shell">
+            <div
+              class="modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="lib-modal-title"
+            >
+              <h4 id="lib-modal-title">Delete project?</h4>
+              <p>
+                This will permanently remove “Onboarding revamp” and its 12
+                wireframes. This can’t be undone.
+              </p>
+              <div class="actions">
+                <button class="btn" type="button">Cancel</button>
+                <button class="btn btn--danger" type="button">
+                  Yes, delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- /component -->
+        </div>
+
+        <div class="demo">
+          <h4>Drawer (side panel)</h4>
+          <div class="drawer-shell">
+            <aside class="drawer" aria-label="Filters">
+              <h4 style="margin-top: 0">Filters</h4>
+              <label class="check"
+                ><input type="checkbox" checked /><span class="box"></span
+                ><span>Active</span></label
+              ><br />
+              <label class="check"
+                ><input type="checkbox" /><span class="box"></span
+                ><span>Archived</span></label
+              >
+            </aside>
+            <div class="drawer-content">
+              <p>Main content area — drawer overlays / pushes from the side.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Accordion</h4>
+          <!-- usage: native <details> gives keyboard + screen reader support for free -->
+          <details class="acc" open>
+            <summary>How does billing work?</summary>
+            <p>
+              You’re billed monthly on the day you signed up. Cancel anytime —
+              you keep access until the period ends.
+            </p>
+          </details>
+          <details class="acc">
+            <summary>Can I invite teammates on the free plan?</summary>
+            <p>Yes — up to 3 collaborators per workspace.</p>
+          </details>
+        </div>
+
+        <div class="demo">
+          <h4>Tooltip</h4>
+          <!-- a11y: tooltip linked via aria-describedby; tooltip itself has role="tooltip" -->
+          <div class="row">
+            <button
+              class="btn btn--icon"
+              type="button"
+              aria-label="Info"
+              aria-describedby="lib-tip-1"
+            >
+              i
+            </button>
+            <span class="tooltip" role="tooltip" id="lib-tip-1"
+              >Free plan supports up to 3 projects.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       STATES
+       ========================================================= -->
+      <section class="section" id="states">
+        <h2>States — loading, empty, progress</h2>
+        <p class="when">
+          When to use: every list/screen needs an empty state and a loading
+          state. Skipping these is the most common wireframe oversight — flag
+          the spec scenarios that produce them and add a screen for each.
+        </p>
+
+        <div class="demo">
+          <h4>Skeleton (loading)</h4>
+          <!-- usage: shape mimics the eventual content; use 3–5 lines max, never a full page of skeletons -->
+          <!-- a11y: container has aria-busy="true"; remove it once content loads -->
+          <div class="card" aria-busy="true" aria-label="Loading projects">
+            <div class="row" style="margin-bottom: 12px">
+              <div class="skeleton skeleton--circle"></div>
+              <div class="grow stack">
+                <div class="skeleton skeleton--lg" style="width: 55%"></div>
+                <div class="skeleton" style="width: 30%"></div>
+              </div>
+            </div>
+            <div class="skeleton skeleton--block"></div>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Empty state</h4>
+          <!-- usage: zero data — always offer a clear next step (CTA), not just a sad illustration -->
+          <div class="empty">
+            <div class="glyph" aria-hidden="true">✎</div>
+            <h3 style="margin: 0 0 4px">No projects yet</h3>
+            <p class="muted">
+              Sketch your first idea — it takes about a minute.
+            </p>
+            <button
+              class="btn btn--primary"
+              type="button"
+              style="margin-top: 8px"
+            >
+              Create project
+            </button>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Progress bar</h4>
+          <div class="stack" style="max-width: 360px">
+            <p style="margin: 0">Uploading <strong>3 of 5</strong> files…</p>
+            <!-- a11y: role="progressbar" + aria-valuenow / min / max -->
+            <div
+              class="progress"
+              role="progressbar"
+              aria-valuenow="60"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Upload progress"
+            >
+              <div class="bar" style="width: 60%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       PLACEHOLDERS
+       ========================================================= -->
+      <section class="section" id="placeholders">
+        <h2>Placeholders</h2>
+        <p class="when">
+          When to use: stand in for content the wireframe doesn’t need to
+          specify (image, video, chart, third-party widget). Always include a
+          label so the next agent knows what should go there.
+        </p>
+
+        <div class="demo">
+          <h4>Image placeholder</h4>
+          <!-- usage: stand-in for hero / product / cover image -->
+          <div
+            class="placeholder placeholder--image"
+            role="img"
+            aria-label="Hero image placeholder — 16:9"
+          >
+            <span>Hero image · 16:9</span>
+          </div>
+        </div>
+
+        <div class="demo">
+          <h4>Generic block</h4>
+          <!-- usage: chart, embed, third-party widget — label what should go here -->
+          <div
+            class="placeholder"
+            style="
+              height: 140px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            Chart: weekly active users (line, last 12 weeks)
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+       MOBILE
+       ========================================================= -->
+      <section class="section" id="mobile">
+        <h2>Mobile</h2>
+        <p class="when">
+          Phone-sized screens for native mobile apps. Use only when
+          <code>feature.json.platform == "mobile"</code>: copy the
+          <code>&lt;style id="mobile"&gt;</code> block next to the main style
+          block and render each screen state as one <code>.phone</code> frame.
+          Touch targets are at least 44pt.
+        </p>
+        <div class="screens">
+          <!-- usage: one phone frame per screen state; give each a .phone-caption naming the state -->
+          <!-- a11y: phone frame is layout only; the real screen gets its own landmarks -->
+          <section class="phone" aria-label="List screen example">
+            <div class="safe-area">safe area (status bar)</div>
+            <!-- usage: .stack-header = back button + title + optional action; icon buttons REQUIRE aria-label -->
+            <header class="stack-header">
+              <button class="icon-btn-lg" aria-label="Back">&larr;</button>
+              <h3>Projects</h3>
+              <button class="icon-btn-lg" aria-label="Add">+</button>
+            </header>
+            <!-- usage: .list-row = tappable row, min 56pt tall -->
+            <div>
+              <div class="list-row"><span class="list-row__title">Kitchen remodel</span><span class="list-row__meta">3 tasks</span></div>
+              <div class="list-row"><span class="list-row__title">Garden plan</span><span class="list-row__meta">1 task</span></div>
+              <div class="list-row"><span class="list-row__title">Trip to Lisbon</span><span class="list-row__meta">done</span></div>
+            </div>
+            <!-- usage: .tab-bar = bottom tabs; current tab uses aria-current="page" -->
+            <nav class="tab-bar" aria-label="Main tabs">
+              <button class="tab-bar__item" aria-current="page"><span aria-hidden="true">[ ]</span>Home</button>
+              <button class="tab-bar__item"><span aria-hidden="true">[ ]</span>Search</button>
+              <button class="tab-bar__item"><span aria-hidden="true">[ ]</span>Profile</button>
+            </nav>
+            <div class="safe-area">safe area (home indicator)</div>
+          </section>
+          <section class="phone" aria-label="Bottom sheet and modal example">
+            <!-- usage: .scrim dims the screen behind a .sheet or .modal-sheet -->
+            <div class="scrim"></div>
+            <div class="safe-area" style="position: relative">safe area (status bar)</div>
+            <!-- usage: .modal-sheet = centered modal; use for confirmations -->
+            <div class="modal-sheet" role="dialog" aria-label="Delete project" style="position: relative">
+              <strong>Delete this project?</strong>
+              <span class="list-row__meta">This cannot be undone.</span>
+              <button class="cta-pill cta-pill--secondary">Cancel</button>
+            </div>
+            <!-- usage: .sheet = bottom sheet with grabber; .cta-pill = primary call to action (56pt) -->
+            <div class="sheet" role="dialog" aria-label="Sort options" style="position: relative">
+              <div class="sheet__grabber"></div>
+              <div class="list-row"><span class="list-row__title">Newest first</span></div>
+              <div class="list-row"><span class="list-row__title">Oldest first</span></div>
+              <button class="cta-pill">Apply</button>
+            </div>
+            <!-- usage: .phone-hint = annotation for implementers, not rendered in product -->
+            <p class="phone-hint" style="position: relative">Annotation for the implementer</p>
+          </section>
+        </div>
+      </section>
+
+      <hr />
+
+      <footer class="muted" style="font-size: 14px">
+        <p>
+          Component library for the <code>wireframer</code> skill. Update this
+          file when a new pattern appears in 2+ wireframes — promote it here so
+          the next feature reuses it.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

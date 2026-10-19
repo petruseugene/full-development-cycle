@@ -1,0 +1,19 @@
+{
+  "attributes": { "bounds": "[0,0][1290,2796]" },
+  "children": [
+    {
+      "attributes": { "bounds": "[0,0][1290,2796]", "class": "android.widget.FrameLayout" },
+      "children": [
+        { "attributes": { "resource-id": "hero", "bounds": "[100,400][300,500]", "text": "" }, "children": [] },
+        { "attributes": { "accessibilityText": "friend", "bounds": "[120,507][220,592]" }, "children": [] },
+        { "attributes": { "id": "perch", "bounds": "[80,500][400,540]" }, "children": [] },
+        { "attributes": { "resource-id": "bubble", "bounds": "[300,300][500,400]" }, "children": [] },
+        { "attributes": { "resource-id": "cta", "bounds": "[10,700][53,760]" }, "children": [] },
+        { "attributes": { "resource-id": "broken", "bounds": "nonsense" }, "children": [] },
+        { "attributes": { "resource-id": "inverted", "bounds": "[50,50][10,10]" } },
+        null,
+        "garbage"
+      ]
+    }
+  ]
+}

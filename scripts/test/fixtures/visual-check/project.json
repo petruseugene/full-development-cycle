@@ -1,0 +1,43 @@
+{
+  "platform": "mobile",
+  "visual": {
+    "device": "A1B2C3D4-E5F6-4789-ABCD-0123456789AB",
+    "tolerance_pct": 10,
+    "tap_min_pt": 44,
+    "forbidden_colors": ["#FF00FF"],
+    "color_delta_e": 10,
+    "color_min_pct": 0.1,
+    "screens": [
+      {
+        "id": "lis",
+        "title": "Lis",
+        "flow": "maestro --device {device} test --output {out} flows/lis.yaml",
+        "elements": {
+          "hero": "hero",
+          "friend": "friend",
+          "perch": "perch",
+          "bubble": "bubble",
+          "cta": "cta",
+          "ghost": "ghost"
+        },
+        "checks": [
+          { "type": "scale", "a": "friend", "b": "hero", "expect": 1 },
+          { "type": "overlap", "a": "bubble", "b": "hero" },
+          { "type": "tap", "elements": ["cta"] },
+          { "type": "support", "element": "friend", "on": "perch" }
+        ]
+      },
+      {
+        "id": "ghosty",
+        "route": "/ghost",
+        "elements": { "ghost": "ghost", "hero": "hero" },
+        "checks": [{ "type": "scale", "a": "ghost", "b": "hero", "expect": 1 }]
+      },
+      {
+        "id": "pix",
+        "route": "/pix",
+        "checks": [{ "type": "colors" }]
+      }
+    ]
+  }
+}

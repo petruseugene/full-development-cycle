@@ -1,0 +1,24 @@
+{
+  "devices": [
+    {
+      "kind": "simulator",
+      "id": "A1B2C3D4-E5F6-4789-ABCD-0123456789AB",
+      "started_at": "2026-10-19T10:00:00.000Z"
+    },
+    {
+      "kind": "emulator",
+      "id": "emulator-5556",
+      "pgid": 424242,
+      "started_at": "2026-10-19T10:00:01.000Z",
+      "ident": "Mon Oct 19 10:00:01 2026"
+    }
+  ],
+  "pids": [
+    {
+      "name": "serve",
+      "pgid": 434343,
+      "started_at": "2026-10-19T10:00:02.000Z",
+      "ident": "Mon Oct 19 10:00:02 2026"
+    }
+  ]
+}

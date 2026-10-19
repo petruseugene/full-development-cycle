@@ -1,0 +1,8 @@
+{
+  "devices": {
+    "com.apple.CoreSimulator.SimRuntime.iOS-18-0": [
+      { "udid": "A1B2C3D4-E5F6-4789-ABCD-0123456789AB", "name": "iPhone 16", "state": "Shutdown", "isAvailable": true },
+      { "udid": "11111111-2222-4333-8444-555555555555", "name": "iPhone SE", "state": "Booted", "isAvailable": true }
+    ]
+  }
+}

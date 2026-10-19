@@ -1,0 +1,8 @@
+{
+  "screen_timeout_s": 100,
+  "device": "A1B2C3D4-0000-1111-2222-333344445555",
+  "screens": [
+    { "id": "home", "title": "Home", "route": "/", "reference": "design/home.png", "acs": ["AC3"], "touches": ["src/**"] },
+    { "id": "detail", "title": "Detail", "route": "/detail", "reference": "design/detail.png", "acs": ["AC4", "AC5"], "touches": ["src/**"] }
+  ]
+}

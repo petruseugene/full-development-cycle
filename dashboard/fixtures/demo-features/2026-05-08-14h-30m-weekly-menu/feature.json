@@ -1,0 +1,31 @@
+{
+  "feature_slug": "weekly-menu",
+  "created": "2026-05-08 14:30",
+  "flow": "feature",
+  "has_ui": true,
+  "has_backend": true,
+  "design_source": null,
+  "auto_tests": true,
+  "visual_tests": true,
+  "current_phase": "implement",
+  "current_task_idx": 4,
+  "task_count": 8,
+  "branch": "feat/weekly-menu",
+  "history": [
+    { "ts": "2026-05-10T08:14:00Z", "phase": "discovery", "subagent": "discovery", "status": "DONE", "duration_s": 240, "tokens_k": 4.2 },
+    { "ts": "2026-05-10T08:21:00Z", "phase": "spec", "subagent": "spec-writer", "status": "DONE", "duration_s": 380, "tokens_k": 6.1 },
+    { "ts": "2026-05-10T08:34:00Z", "phase": "wireframe", "subagent": "wireframer", "status": "DONE", "duration_s": 720, "tokens_k": 9.4 },
+    { "ts": "2026-05-10T08:48:00Z", "phase": "plan", "subagent": "plan-writer", "status": "DONE", "duration_s": 200, "tokens_k": 3.8 },
+    { "ts": "2026-05-10T09:02:00Z", "phase": "implement", "subagent": "frontend-dev", "status": "running", "duration_s": 0, "tokens_k": 5.2, "task_id": "T4" }
+  ],
+  "totals": {
+    "by_subagent": {
+      "discovery": { "calls": 1, "approved": 1, "retried": 0, "time_s": 240, "tokens_k": 4.2 },
+      "spec-writer": { "calls": 1, "approved": 1, "retried": 0, "time_s": 380, "tokens_k": 6.1 },
+      "wireframer": { "calls": 1, "approved": 1, "retried": 0, "time_s": 720, "tokens_k": 9.4 },
+      "plan-writer": { "calls": 1, "approved": 1, "retried": 0, "time_s": 200, "tokens_k": 3.8 },
+      "frontend-dev": { "calls": 4, "approved": 3, "retried": 1, "time_s": 1840, "tokens_k": 18.7 },
+      "code-reviewer": { "calls": 5, "approved": 3, "retried": 2, "time_s": 420, "tokens_k": 6.9 }
+    }
+  }
+}

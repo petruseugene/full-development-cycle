@@ -1,0 +1,11 @@
+{
+  "feature_slug": "xss",
+  "created": "2026-01-05 00:00",
+  "flow": "feature",
+  "track": "full",
+  "started_at": "2026-01-05T00:00:00.000Z",
+  "current_phase": "test",
+  "history": [
+    {"ts": "2026-01-05T00:10:00.000Z", "phase": "spec", "subagent": "dev-cycle:spec-writer", "status": "DONE", "model": "opus", "duration_s": 60, "tokens_k": 3, "summary": "\"><img src=x onerror=alert(1)>"}
+  ]
+}

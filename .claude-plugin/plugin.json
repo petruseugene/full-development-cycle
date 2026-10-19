@@ -1,0 +1,18 @@
+{
+  "name": "dev-cycle",
+  "description": "Full development cycle: an orchestrated skill pack that takes any feature or bugfix from idea to merged PR through strict subagent dispatch — discovery, architecture, spec, plan, parallel implementation, review gates, tests, git.",
+  "version": "1.5.1",
+  "commands": [
+    "./commands/orchestrator.md",
+    "./commands/architector.md",
+    "./commands/dashboard.md"
+  ],
+  "author": {
+    "name": "Eugene Petrus",
+    "url": "https://github.com/petruseugene"
+  },
+  "homepage": "https://github.com/petruseugene/full-development-cycle",
+  "repository": "https://github.com/petruseugene/full-development-cycle",
+  "license": "MIT",
+  "keywords": ["orchestration", "workflow", "skills", "spec", "planning", "code-review", "subagents"]
+}

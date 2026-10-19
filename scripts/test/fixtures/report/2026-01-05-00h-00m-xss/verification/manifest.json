@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "plan": { "ts": "2026-01-05T00:20:00.000Z", "all": false, "catalog": true, "selected": ["home"], "budget_s": 360 },
+  "screens": {
+    "home": { "id": "home", "title": "Home", "reference": "none", "checks": [
+      { "type": "scale", "subject": "<svg onload=alert(1)>", "measured": 1, "expected": 1, "tolerance": 10, "source": "dom", "result": "pass" }
+    ] }
+  },
+  "verdict": { "status": "PASSED", "ts": "2026-01-05T00:30:00.000Z", "run_time_s": 42, "budget_s": 360, "passed": 1, "total": 1, "reasons": [] }
+}

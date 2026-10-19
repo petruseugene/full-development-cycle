@@ -1,0 +1,2 @@
+# Fixture post-merge logs are data, not build output.
+!*.log

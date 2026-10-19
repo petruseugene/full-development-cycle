@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dev-cycle",
+  "description": "Marketplace hosting the dev-cycle plugin — an end-to-end feature/bugfix orchestration skill pack for Claude Code.",
+  "owner": {
+    "name": "Eugene Petrus",
+    "email": "3142414+petruseugene@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "dev-cycle",
+      "description": "Takes any feature or bugfix from idea to merged PR through strict subagent orchestration.",
+      "category": "workflow",
+      "source": "./"
+    }
+  ]
+}

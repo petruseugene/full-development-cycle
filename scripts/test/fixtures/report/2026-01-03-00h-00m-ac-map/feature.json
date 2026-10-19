@@ -1,0 +1,10 @@
+{
+  "feature_slug": "ac-map",
+  "created": "2026-01-03 00:00",
+  "flow": "bugfix",
+  "started_at": "2026-01-03T00:00:00.000Z",
+  "current_phase": "test",
+  "history": [
+    {"ts": "2026-01-03T00:10:00.000Z", "phase": "implement", "subagent": "dev-cycle:backend-dev", "status": "DONE", "model": "sonnet", "tokens":{"input":1,"output":1,"cache_read":0,"cache_write":0},"estimated":false, "usd_est": 2.0, "tokens_k": 30}
+  ]
+}

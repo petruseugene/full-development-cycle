@@ -1,0 +1,13 @@
+{
+  "feature_slug": "cost",
+  "created": "2026-01-02 00:00",
+  "flow": "feature",
+  "track": "lite",
+  "started_at": "2026-01-02T00:00:00.000Z",
+  "current_phase": "review",
+  "history": [
+    {"ts": "2026-01-02T00:10:00.000Z", "phase": "discovery", "subagent": "dev-cycle:discovery", "status": "DONE", "model": "opus", "duration_s": 300, "tokens_k": 10, "estimated": true},
+    {"ts": "2026-01-02T00:12:00.000Z", "phase": "discovery", "subagent": "discovery", "status": "DONE", "model": "opus", "duration_s": 60, "tokens_k": 4, "estimated": true},
+    {"ts": "2026-01-02T00:13:00.000Z", "phase": "gate.content", "subagent": "cli", "executor": "cli", "status": "PASSED", "model": "inherit", "tokens_k": 99}
+  ]
+}
