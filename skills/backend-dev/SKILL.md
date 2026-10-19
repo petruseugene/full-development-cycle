@@ -29,6 +29,8 @@ Get your `Touches:` globs by track. Full: from `briefs/task-<n>.md` (Touches, De
 - If you must write outside `Touches:` (a shared types file, a barrel export, a config), list every extra path under `touches_expanded:` in your final YAML report.
 - This is a **soft, honor-based contract** — no tool blocks the write. The orchestrator uses your reported `touches_expanded:` to detect collisions with parallel siblings after the group completes. Underreporting expansions silently can corrupt a sibling's work.
 
+**Worktree:** when your prompt carries `Worktree: <abs>`, you run in an isolated git worktree. Prefix every Bash call with `cd <abs> &&`; read and write only under `<abs>`, resolving the brief's repo-relative paths against it; pass `--feature <abs feature dir>` to the CLI; run no state-changing git (no stash, checkout, reset, restore, switch or commit). Still report `touches_expanded`.
+
 ## The job
 
 1. **Detect stack** from manifest files. Note framework + ORM/DB driver + auth approach + test runner.

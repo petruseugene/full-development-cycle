@@ -201,9 +201,32 @@ export function resolveProjectRoot(ctx) {
   }
 }
 
-/** `<root>/docs/features` */
+/**
+ * Main worktree root for `root`. When `<root>/.git` is a file (a linked
+ * worktree), follow `gitdir:` -> `<gitdir>/commondir` and return the realpath
+ * of the common dir's parent. Main worktree, non-git dir, submodule (no
+ * commondir) or anything unreadable returns `root` unchanged. No subprocess.
+ * @param {string} root
+ */
+export function mainWorktreeRoot(root) {
+  try {
+    const dotGit = path.join(root, '.git');
+    if (!fs.statSync(dotGit).isFile()) return root;
+    const m = /^gitdir:\s*(.+?)\s*$/m.exec(fs.readFileSync(dotGit, 'utf8'));
+    if (!m) return root;
+    const gitdir = path.resolve(root, m[1]);
+    const common = fs.readFileSync(path.join(gitdir, 'commondir'), 'utf8').trim();
+    if (!common) return root;
+    const commonDir = fs.realpathSync(path.resolve(gitdir, common));
+    return path.dirname(commonDir);
+  } catch {
+    return root;
+  }
+}
+
+/** `<main worktree root>/docs/features` */
 export function featuresRoot(ctx) {
-  return path.join(resolveProjectRoot(ctx), 'docs', 'features');
+  return path.join(mainWorktreeRoot(resolveProjectRoot(ctx)), 'docs', 'features');
 }
 
 function realDir(p) {

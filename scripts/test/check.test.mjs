@@ -282,10 +282,11 @@ test('R5: without a feature folder logs go to a temp dir; --record needs a featu
   } finally { fx.cleanup(); }
 });
 
-test('AC45: repo .dev-cycle/project.json has only commands and resolves the three R44 commands', async () => {
+test('AC45: repo .dev-cycle/project.json has commands and worktrees (audit) and resolves the three R44 commands', async () => {
   const file = path.join(REPO_ROOT, '.dev-cycle', 'project.json');
   const profile = JSON.parse(fs.readFileSync(file, 'utf8'));
-  assert.deepEqual(Object.keys(profile), ['commands']);
+  assert.deepEqual(Object.keys(profile), ['commands', 'worktrees']);
+  assert.deepEqual(profile.worktrees, { mode: 'audit' });
   const expected = {
     lint: 'bash scripts/lint-skills.sh',
     typecheck: 'cd dashboard && npx tsc --noEmit',

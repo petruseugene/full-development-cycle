@@ -22,13 +22,15 @@ import { updateFeatureJson } from './feature-json.mjs';
 //   cherry-pick          cli-fallback: hotfix cherry-pick forward to main
 //   gate.<name>          profile extra gate (name: [a-z0-9][a-z0-9-]*)
 //   interview | conflict orchestrator bookkeeping (excluded from totals)
+//   worktree             worktree isolation collect/audit bookkeeping (task and group
+//                        entries; excluded from totals)
 //   orchestrator         orchestrator's own measured tokens (excluded from by_*)
 export const PHASE_VOCABULARY = Object.freeze([
   'discovery', 'architecture', 'spec', 'wireframe', 'plan',
   'implement', 'implement.task=<n>', 'implement.area=<name>',
   'migrate', 'migrate.task=<n>', 'owner.task=<n>',
   'static-check', 'review', 'auto-test', 'visual-test', 'a11y', 'deps-audit', 'security',
-  'release', 'git', 'cherry-pick', 'gate.<name>', 'interview', 'conflict', 'orchestrator',
+  'release', 'git', 'cherry-pick', 'gate.<name>', 'interview', 'conflict', 'worktree', 'orchestrator',
 ]);
 
 const SIMPLE_PHASES = new Set(PHASE_VOCABULARY.filter((p) => !p.includes('<')));
@@ -77,7 +79,8 @@ export function appendHistory(dir, entry) {
     throw new UsageError(`invalid --phase '${entry.phase}'`);
   }
   const full = { ts: entry.ts ?? new Date().toISOString(), phase: entry.phase, subagent: entry.subagent, status: entry.status, model: entry.model ?? 'inherit' };
-  for (const k of ['duration_s', 'tokens_k', 'summary', 'concerns', 'executor', 'agent_id', 'tokens', 'estimated', 'model_id', 'usd_est', 'usd_unpriced', 'started_at', 'ended_at']) {
+  for (const k of ['duration_s', 'tokens_k', 'summary', 'concerns', 'executor', 'agent_id', 'tokens', 'estimated', 'model_id', 'usd_est', 'usd_unpriced', 'started_at', 'ended_at',
+    'task', 'touches_expanded', 'files', 'conflicts', 'tasks', 'stray', 'mode']) {
     if (entry[k] !== undefined) full[k] = entry[k];
   }
   updateFeatureJson(dir, (fj) => {

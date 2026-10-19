@@ -57,10 +57,56 @@ const PROTECTED_WARNING_RE = /^protected skill '/;
 export const DISCOVERY_VALUES = Object.freeze(['full', 'internal', 'skip']);
 export const PROFILE_KEYS = Object.freeze([
   'platform', 'interview_defaults', 'commands', 'extra_gates', 'post_merge',
-  'enabled_skills', 'guards', 'rules', 'recipes', 'visual',
+  'enabled_skills', 'guards', 'rules', 'recipes', 'visual', 'worktrees',
 ]);
 export const MAX_TIMEOUT_S = 86400;
 const NAME_RE = /^[a-z0-9-]+$/;
+
+export const WORKTREE_MODES = Object.freeze(['off', 'audit', 'auto']);
+export const WORKTREE_DEFAULTS = Object.freeze({
+  mode: 'off',
+  min_group: 3,
+  dir: '.dev-cycle/worktrees',
+  link: Object.freeze(['**/node_modules']),
+  copy: Object.freeze(['.env', '.env.*']),
+  setup: undefined,
+});
+
+/** True when a repo-relative path is absolute or has a `..` segment. */
+function unsafeRelPath(p) {
+  return path.isAbsolute(p) || p.startsWith('/') || /^[A-Za-z]:/.test(p) || p.split(/[\\/]+/).includes('..');
+}
+
+function validateWorktrees(w, errors) {
+  if (!isObj(w)) { errors.push('worktrees must be an object'); return; }
+  for (const k of Object.keys(w)) {
+    if (!Object.hasOwn(WORKTREE_DEFAULTS, k)) errors.push(`worktrees: unknown key '${k}'`);
+  }
+  if ('mode' in w && !WORKTREE_MODES.includes(w.mode)) errors.push(`worktrees.mode must be one of ${WORKTREE_MODES.join('|')}`);
+  if ('min_group' in w && !(Number.isInteger(w.min_group) && w.min_group >= 2)) errors.push('worktrees.min_group must be an integer >= 2');
+  if ('dir' in w) {
+    if (typeof w.dir !== 'string' || w.dir === '') errors.push('worktrees.dir must be a non-empty string');
+    else if (unsafeRelPath(w.dir)) errors.push('worktrees.dir must be repo-relative (no absolute path, no ".." segment)');
+  }
+  for (const k of ['link', 'copy']) {
+    if (!(k in w)) continue;
+    if (!isStrArr(w[k])) { errors.push(`worktrees.${k} must be an array of strings`); continue; }
+    w[k].forEach((g, i) => {
+      if (g === '' || unsafeRelPath(g)) errors.push(`worktrees.${k}[${i}] must be a relative glob without ".." (got ${JSON.stringify(g)})`);
+    });
+  }
+  if ('setup' in w && w.setup !== undefined && typeof w.setup !== 'string') errors.push('worktrees.setup must be a string');
+}
+
+/** Resolved `worktrees` config with defaults applied (profile assumed validated). */
+export function worktreesConfig(profile) {
+  const w = isObj(profile?.worktrees) ? profile.worktrees : {};
+  const out = { ...WORKTREE_DEFAULTS };
+  for (const k of Object.keys(WORKTREE_DEFAULTS)) if (k in w && w[k] !== undefined) out[k] = w[k];
+  out.link = [...out.link];
+  out.copy = [...out.copy];
+  return out;
+}
 
 /** Distinct `{name}` placeholders in a recipe cmd, in first-use order. */
 export function recipePlaceholders(cmd) {
@@ -213,6 +259,7 @@ export function validateProfile(profile, { skills = registrySkills() } = {}) {
       }
     });
   }
+  if ('worktrees' in profile) validateWorktrees(profile.worktrees, errors);
   if ('visual' in profile) {
     const v = validateVisual(profile.visual);
     errors.push(...v.errors);

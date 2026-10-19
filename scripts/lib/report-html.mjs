@@ -375,6 +375,12 @@ function renderPlanGroups(groups) {
   return `<ol class="plain">\n${items.join('\n')}\n</ol>`;
 }
 
+function renderWorktrees(list) {
+  const rows = arr(list).filter((r) => r && typeof r === 'object').map((r) =>
+    `<tr>${td(esc(r.mode ?? '—'))}${td(esc(arr(r.tasks).map((n) => `Task ${n}`).join(', ') || '—'))}${td(esc(r.touches_expanded ?? 0), 'num')}${td(esc(r.stray ?? 0), 'num')}${td(esc(r.conflicts ?? 0), 'num')}</tr>`);
+  return table(['Mode', 'Tasks', ['Touches expanded', 'num'], ['Stray', 'num'], ['Conflicts', 'num']], rows, 'None.');
+}
+
 function costTable(title, map) {
   const rows = Object.entries(obj(map)).map(([k, v]) => {
     const r = obj(v);
@@ -450,6 +456,7 @@ export function renderFeature(feature, { generated_at } = {}) {
     card('Timeline', renderTimeline(f), 'timeline'),
     card('Waits and fix cycles', renderWaitsAndCycles(f), 'waits'),
     card('Plan groups', renderPlanGroups(f.plan_groups), 'plan-groups'),
+    ...(arr(f.worktrees).length > 0 ? [card('Worktrees', renderWorktrees(f.worktrees), 'worktrees')] : []),
     card('Cost', renderCost(f.cost), 'cost'),
     card('Acceptance criteria map', renderAcMap(f), 'ac-map'),
     card('Verification gallery', renderGallery(f), 'gallery'),

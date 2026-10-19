@@ -5,7 +5,7 @@
 // history yields deep-equal output.
 
 /** Phases that are not subagent calls and are excluded from totals. */
-const EXCLUDED_PHASES = new Set(['interview', 'conflict']);
+const EXCLUDED_PHASES = new Set(['interview', 'conflict', 'worktree']);
 
 /** Statuses counted as `approved`. */
 export const APPROVED_STATUSES = new Set(['APPROVED', 'PASSED']);
