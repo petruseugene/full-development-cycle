@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 127.0.0.1 -p 3737",
-    "build": "next build",
-    "start": "next start -H 127.0.0.1 -p 3737",
+    "dev": "NEXT_TELEMETRY_DISABLED=1 next dev -H 127.0.0.1 -p 3737",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "start": "NEXT_TELEMETRY_DISABLED=1 next start -H 127.0.0.1 -p 3737",
     "lint": "next lint",
     "test": "vitest run"
   },

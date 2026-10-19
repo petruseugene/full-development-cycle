@@ -20,10 +20,10 @@ test('bumpVersion and inferLevel follow conventional commits', T, () => {
   assert.equal(bumpVersion('1.4.9', 'patch'), '1.4.10');
   assert.equal(bumpVersion('1.4.0', 'major'), '2.0.0');
   assert.equal(inferLevel(['feat!: z'], '1.4.0'), 'major');
-  assert.equal(inferLevel(['fix: a', 'feat(x): b'], '1.4.0'), 'minor');
+  assert.equal(inferLevel(['fix: a', 'feat(x): b'], '1.4.0'), 'patch');
   assert.equal(inferLevel(['chore: a'], '1.4.0'), 'patch');
   assert.equal(inferLevel(['fix: a\n\nBREAKING CHANGE: gone'], '1.4.0'), 'major');
-  assert.equal(inferLevel(['feat: z'], '0.3.1'), 'minor');
+  assert.equal(inferLevel(['feat: z'], '0.3.1'), 'patch');
   assert.equal(inferLevel(['feat!: z'], '0.3.1'), 'minor');
   assert.throws(() => bumpVersion('1.4', 'patch'), ReleaseError);
 });

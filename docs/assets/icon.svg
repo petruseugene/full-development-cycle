@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" rx="224" ry="224" fill="#1e1e2e"/>
+  <g fill="none" stroke="#7c7cff" stroke-width="56" stroke-linecap="round">
+    <path d="M 564.1 216.6 A 300 300 0 0 1 811.8 501.5" fill="none" stroke="#7c7cff" stroke-width="56" stroke-linecap="round"/>
+    <path d="M 741.8 704.8 A 300 300 0 0 1 371.2 776.9" fill="none" stroke="#7c7cff" stroke-width="56" stroke-linecap="round"/>
+    <path d="M 230.1 614.6 A 300 300 0 0 1 353.0 257.6" fill="none" stroke="#7c7cff" stroke-width="56" stroke-linecap="round"/>
+  </g>
+  <g fill="#7c7cff">
+    <polygon points="873.8,499.4 814.3,571.5 749.9,503.7"/>
+    <polygon points="342.1,831.6 309.4,744.0 400.3,722.1"/>
+    <polygon points="320.2,205.0 412.4,220.5 385.9,310.2"/>
+  </g>
+  <g fill="none" stroke="#f1f5f9" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 392 430 L 500 512 L 392 594" fill="none" stroke="#f1f5f9" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 548 600 L 644 600" fill="none" stroke="#f1f5f9" stroke-width="52" stroke-linecap="round"/>
+  </g>
+</svg>

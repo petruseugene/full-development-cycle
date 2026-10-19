@@ -3,6 +3,9 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// Built at runtime so no key-like literal ships in the repo.
+const FAKE_KEY = ['sk', 'ant', 'api03', 'AbC_123', 'xyz'].join('-');
+
 vi.mock('node:fs', async () => {
   const noop = async () => undefined;
   const promises = {
@@ -195,12 +198,12 @@ describe('session-manager errored-session recovery (L13)', () => {
         type: 'result',
         subtype: 'error_during_execution',
         is_error: true,
-        result: `bad sk-ant-api03-AbC_123-xyz ${'z'.repeat(500)}`,
+        result: `bad ${FAKE_KEY} ${'z'.repeat(500)}`,
       },
     ]);
     const err = (record.ringBuffer ?? []).find((e) => e.type === 'error');
     const msg = String(err?.message);
-    expect(msg).not.toMatch(/sk-ant-api03/);
+    expect(msg).not.toContain(FAKE_KEY);
     expect(msg).toContain('[redacted]');
     expect(msg.length).toBeLessThanOrEqual(201);
   });

@@ -49,7 +49,7 @@ Rules:
 
 Runs after the visual verdict when `feature.json.a11y_audit == true` and `feature.json.has_ui == true` (absent `a11y_audit` follows `visual_tests`). No-op otherwise.
 
-- Web: resolve the dev URL as above, make sure the dev server answers, then run axe-core per `references/axe-recipes.md` (`npx -y @axe-core/cli@latest <url> --tags wcag2a,wcag2aa --exit`; optional per breakpoint). WCAG AA violations are failures; AAA are warnings.
+- Web: resolve the dev URL as above, make sure the dev server answers, then run axe-core per `references/axe-recipes.md` (`npx -y @axe-core/cli@4.13.0 <url> --tags wcag2a,wcag2aa --exit`; optional per breakpoint). WCAG AA violations are failures; AAA are warnings.
 - Mobile (`platform == "mobile"`): no axe-core; follow `references/mobile-a11y.md` (React Native static checks, its PASSED/FAILED mapping and report format).
 - Append to `test-report.md` a `## Task <N> a11y — <ISO ts> — PASSED|FAILED` section with one bullet per rule: `- [pass] <rule>` or `- [fail] <rule> — <selector> — <detail>` (rule id, impact, selector, snippet). PASSED means zero AA violations.
 - Record the result as history phase `a11y` (dod key `a11y`).

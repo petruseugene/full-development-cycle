@@ -3,6 +3,25 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.1] — 2026-10-20
+
+### Fixed
+
+- fix(release): auto bumps patch for feat; prepare plugin-directory listing
+
+### Changed
+
+- `ship --release auto` now bumps the patch for `feat:` commits; only breaking changes raise the level (major, or minor on 0.x); pass `--release minor` explicitly for a minor bump.
+- Accessibility audits pin `@axe-core/cli@4.13.0` instead of `@latest`.
+- README links and image use absolute https URLs (plugin directory listing requirement).
+- Dashboard disables Next.js telemetry (`NEXT_TELEMETRY_DISABLED=1` in `run-dashboard.sh` and the `dev`/`build`/`start` scripts); README discloses the browser-side Google Fonts load.
+- Dashboard test fixtures build fake API keys at runtime, so no tracked file contains a key-like string.
+
+### Added
+
+- Plugin icon (`.claude-plugin/icon.png`, source `docs/assets/icon.svg`) and the `icon` field in `plugin.json`.
+- README section "What dev-cycle runs and sends" listing hooks, CLI side effects, network calls and telemetry (none).
+
 ## [1.7.0] — 2026-10-19
 
 ### Added

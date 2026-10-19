@@ -248,22 +248,17 @@ export function parseCommit(message) {
 
 /**
  * Bump level for a set of commit messages (highest wins).
- * `!`/BREAKING → major, feat → minor, everything else → patch. On 0.x a
- * breaking change bumps minor, never major.
+ * `!`/BREAKING → major; everything else, including feat, → patch (small
+ * features bump the third number; pass `--release minor` explicitly for a
+ * minor bump). On 0.x a breaking change bumps minor, never major.
  * @param {string[]} messages
  * @param {string} current
  * @returns {'major'|'minor'|'patch'}
  */
 export function inferLevel(messages, current) {
-  let rank = 1;
-  for (const msg of messages) {
-    const { type, breaking } = parseCommit(msg);
-    if (breaking) rank = Math.max(rank, 3);
-    else if (type === 'feat') rank = Math.max(rank, 2);
-  }
-  const zero = current.startsWith('0.');
-  if (rank === 3) return zero ? 'minor' : 'major';
-  return rank === 2 ? 'minor' : 'patch';
+  const breaking = messages.some((msg) => parseCommit(msg).breaking);
+  if (!breaking) return 'patch';
+  return current.startsWith('0.') ? 'minor' : 'major';
 }
 
 /** Next version for a level (never `auto`). */
