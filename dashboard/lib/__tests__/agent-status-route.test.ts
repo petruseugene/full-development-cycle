@@ -4,6 +4,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET } from '@/app/api/agent-status/route';
 import { __resetAgentStatusForTests } from '@/lib/agent-mode';
 
+// Built at runtime so no key-like literal ships in the repo.
+const FAKE_KEY = ['sk', 'ant', 'test', 'SECRET'].join('-');
+
 const saved = { ...process.env };
 let logs: string[] = [];
 
@@ -33,10 +36,10 @@ async function call() {
 
 describe('GET /api/agent-status (AC5)', () => {
   const cases: Array<[string, Record<string, string>, boolean]> = [
-    ['off', { DASHBOARD_AGENT: 'off', ANTHROPIC_API_KEY: 'sk-ant-test-SECRET' }, false],
+    ['off', { DASHBOARD_AGENT: 'off', ANTHROPIC_API_KEY: FAKE_KEY }, false],
     ['on', { DASHBOARD_AGENT: 'on' }, true],
     ['auto without key', {}, false],
-    ['auto with key', { ANTHROPIC_API_KEY: 'sk-ant-test-SECRET' }, true],
+    ['auto with key', { ANTHROPIC_API_KEY: FAKE_KEY }, true],
   ];
   it.each(cases)('%s: 200, exact key set, no secret', async (_n, env, enabled) => {
     Object.assign(process.env, env);

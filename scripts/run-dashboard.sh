@@ -42,6 +42,8 @@ if [[ ! -d "$FEATURES_DIR" ]]; then
   echo "WARN: $FEATURES_DIR does not exist yet — the dashboard will start empty." >&2
 fi
 
+export NEXT_TELEMETRY_DISABLED=1
+
 cd "$DASHBOARD_DIR"
 if [[ ! -d node_modules ]]; then
   echo "Installing dashboard dependencies (first run)…"

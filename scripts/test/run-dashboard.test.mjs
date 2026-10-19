@@ -9,7 +9,7 @@ const SCRIPT = path.resolve(new URL('../run-dashboard.sh', import.meta.url).path
 const BIN = fs.mkdtempSync(path.join(os.tmpdir(), 'rd-bin-'));
 fs.writeFileSync(
   path.join(BIN, 'npm'),
-  '#!/bin/sh\necho "AGENT=${DASHBOARD_AGENT-<unset>}"\necho "FEATURES=$DASHBOARD_FEATURES_DIR"\n',
+  '#!/bin/sh\necho "TELEMETRY=${NEXT_TELEMETRY_DISABLED-<unset>}"\necho "AGENT=${DASHBOARD_AGENT-<unset>}"\necho "FEATURES=$DASHBOARD_FEATURES_DIR"\n',
   { mode: 0o755 },
 );
 

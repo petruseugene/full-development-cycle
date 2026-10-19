@@ -127,7 +127,8 @@ flows and benefit from per-task granularity.
 Both shapes are conventional-commits-compliant
 (`<type>(<scope>): <subject>` header). `node <CLI> ship --release auto` parses
 the subject and body to infer the semver bump (see the orchestrator's
-`references/release.md`), so:
+`references/release.md`; only breaking changes raise the level, `feat` is a
+patch, and a minor bump needs an explicit `--release minor`), so:
 
 - Bugfix/hotfix: multiple structured commits; the highest bump implied wins.
 - Feature: one structured commit; its header (and body footer) sets the bump.

@@ -20,24 +20,25 @@ Conventional Commits to semver level. With `--release auto`, `ship` scans the su
 | Commit shape | Level |
 |---|---|
 | `BREAKING CHANGE:` at the start of a body line OR `!` after type/scope (e.g. `feat!:`, `refactor(api)!:`) | **major** |
-| `feat:` / `feat(scope):` | **minor** |
-| anything else (`fix`, `perf`, `chore`, `docs`, `refactor`, `test`, `style`, `build`, `ci`, unparseable) | **patch** |
+| anything else (`feat`, `fix`, `perf`, `chore`, `docs`, `refactor`, `test`, `style`, `build`, `ci`, unparseable) | **patch** |
+
+`auto` never picks **minor** outside 0.x: small features bump the third number. Pass `--release minor` explicitly for a minor bump.
 
 ### 0.x.y special case
 
 While the major version is `0`:
 - `BREAKING CHANGE` / `!` bumps **minor**, never major.
-- `feat:` still bumps **minor** (same as on 1.x).
+- `feat:` bumps **patch**, as on 1.x (pass `--release minor` explicitly for a minor bump).
 - everything else bumps **patch**.
 
 ### Examples
 
 | Messages | Old to New |
 |---|---|
-| `feat: add login`, `fix: typo` | 1.2.3 to 1.3.0 |
+| `feat: add login`, `fix: typo` | 1.2.3 to 1.2.4 |
 | `feat!: rename API`, `fix: ...` | 1.2.3 to 2.0.0 |
 | `chore: bump deps` | 1.2.3 to 1.2.4 |
-| `feat: add login` (on 0.x) | 0.3.1 to 0.4.0 |
+| `feat: add login` (on 0.x) | 0.3.1 to 0.3.2 |
 | `fix: typo` (on 0.x) | 0.4.2 to 0.4.3 |
 | `feat!: drop ABC` (on 0.x) | 0.4.2 to 0.5.0 |
 | `refactor: ...`, `docs: ...` | 1.2.3 to 1.2.4 |

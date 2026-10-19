@@ -3,7 +3,7 @@
 ## Basic run
 
 ```bash
-npx -y @axe-core/cli@latest http://localhost:3000 \
+npx -y @axe-core/cli@4.13.0 http://localhost:3000 \
   --tags wcag2a,wcag2aa \
   --exit \
   --save axe-report.json
@@ -18,9 +18,9 @@ npx -y @axe-core/cli@latest http://localhost:3000 \
 Run three times against the same URL with different viewport flags:
 
 ```bash
-npx @axe-core/cli@latest <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=375,667" --save axe-mobile.json
-npx @axe-core/cli@latest <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=768,1024" --save axe-tablet.json
-npx @axe-core/cli@latest <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=1440,900" --save axe-desktop.json
+npx @axe-core/cli@4.13.0 <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=375,667" --save axe-mobile.json
+npx @axe-core/cli@4.13.0 <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=768,1024" --save axe-tablet.json
+npx @axe-core/cli@4.13.0 <url> --tags wcag2a,wcag2aa --chromium-options "--window-size=1440,900" --save axe-desktop.json
 ```
 
 Merge violations across the three; deduplicate by `id` + `nodes[].target`.

@@ -120,13 +120,13 @@ test('AC27: subject bullet sections, auto levels, mismatch, no-manifest, app.jso
     assert.equal(repo.git(['rev-parse', 'v2.0.0^{commit}']), mergeSha());
   } finally { repo.cleanup(); }
 
-  // auto on 0.x: feat -> minor
+  // auto on 0.x: feat -> patch
   ({ repo, gh, mergeSha } = mkRepo({ manifests: { 'package.json': '{"version":"0.3.1"}' } }));
   try {
     gh.setRules([mergeRule(mergeSha())]);
     const r = await ship(repo, gh, ['--release', 'auto', '--subject', 'feat: z']);
     assert.equal(r.code, 0, r.err);
-    assert.equal(JSON.parse(repo.git(['show', 'feat/sample:package.json'])).version, '0.4.0');
+    assert.equal(JSON.parse(repo.git(['show', 'feat/sample:package.json'])).version, '0.3.2');
   } finally { repo.cleanup(); }
 
   // version mismatch
