@@ -25,4 +25,5 @@ D2: <answer verbatim>
 - Never hand-edit spec.md: do not tick, move or delete decisions yourself.
 - Exit 2 from `spec decisions` (malformed block): re-dispatch spec-writer with the error text so it repairs the block, then re-run.
 - Quick track, flows bugfix and hotfix skip all of this (no spec.md).
+- Amendments and `spec analyze`: `spec-analyze.md`.
 - `dod` fails with `! DOD-GATE FAILED: decisions last status = OPEN; aborting before push.` as a backstop (`dod-gate.md`); do not rely on it.

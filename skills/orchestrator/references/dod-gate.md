@@ -83,6 +83,10 @@ source yields no tasks in that mode, dod fails with gate `tasks`:
 `! DOD-GATE FAILED: decisions last status = OPEN; aborting before push.`
 It is checked after `tasks` and before the history gates, is not a history gate and is not in the required set. Quick track, bugfix, hotfix and specs without the section are unaffected. Resolve it by re-running the decisions step (`open-decisions.md`), never by editing spec.md.
 
+**Spec analyze.** For flow `feature`, track `full` or `lite` (absent = full), when spec.md exists, dod runs `analyzeSpec` and fails on any error (not warnings):
+`! DOD-GATE FAILED: spec-analyze last status = ERRORS; aborting before push.`
+It is checked after `decisions` and before the history gates, is not a history gate and is not in the required set. Quick track, bugfix and hotfix are unaffected. Fix it by re-dispatching the writer (`spec-analyze.md`), never by editing spec.md.
+
 A lite feature with absent or empty `areas` fails with
 `! DOD-GATE FAILED: implement.area=<none> last status = MISSING; aborting before push.`
 

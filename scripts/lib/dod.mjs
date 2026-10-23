@@ -6,6 +6,8 @@ import path from 'node:path';
 import { hasOpenDecisions } from './decisions.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { isOwnerTask, parsePlan, tasksSource } from './plan.mjs';
+import { analyzeSpec } from './spec-analyze.mjs';
+import { UsageError } from './core.mjs';
 
 export const PASS_SET = new Set(['DONE', 'APPROVED', 'PASSED']);
 
@@ -70,6 +72,18 @@ export function lastStatus(history, gate) {
   return status;
 }
 
+/** True when `spec analyze` would report errors. Read-only; a malformed input counts as an error. */
+function specAnalyzeFails(dir, specText) {
+  const read = (f) => { try { return fs.readFileSync(path.join(dir, f), 'utf8'); } catch (err) { if (err?.code === 'ENOENT') return null; throw err; } };
+  try {
+    const r = analyzeSpec({ specText, tasksText: tasksSource(dir)?.text ?? null, reportText: read('test-report.md') });
+    return r.errors.length > 0;
+  } catch (err) {
+    if (err instanceof UsageError) return true;
+    throw err;
+  }
+}
+
 /**
  * Evaluate the gate for a feature folder.
  * @param {string} dir
@@ -90,6 +104,7 @@ export function evaluateDod(dir) {
     let spec = null;
     try { spec = fs.readFileSync(path.join(dir, 'spec.md'), 'utf8'); } catch (err) { if (err?.code !== 'ENOENT') throw err; }
     if (spec !== null && hasOpenDecisions(spec)) return { passed: false, required, failed: { gate: 'decisions', status: 'OPEN' } };
+    if (spec !== null && specAnalyzeFails(dir, spec)) return { passed: false, required, failed: { gate: 'spec-analyze', status: 'ERRORS' } };
   }
   for (const gate of required) {
     // owner.task gates come from the tasks source status, never history.

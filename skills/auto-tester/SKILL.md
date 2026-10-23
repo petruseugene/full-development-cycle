@@ -63,8 +63,8 @@ assertion mismatch:
 ```
 
 Also require a `## AC coverage — auto` section in `test-report.md`. It has one
-bullet per acceptance criterion that a test exercises or that you judged
-untestable, in the form:
+bullet per live acceptance criterion that a test exercises or that you judged
+untestable (skip superseded and removed ACs: those marked `[superseded → AC<n>]` or `(removed — D<n>)`), in the form:
 
 ```markdown
 ## AC coverage — auto

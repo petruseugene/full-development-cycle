@@ -11,7 +11,7 @@ The single definition of the task list shape. Used by plan-writer (in `plan.md`)
 - **Files:** paths to create/modify, where known.
 - **Recipe:** `<recipe name>` (content tasks only; required for them; must exist in `profile.recipes`).
 - **Wireframes:** relative paths from the feature folder, one per wireframe-anchored AC the task covers. Omit the field entirely if none.
-- **Acceptance:** AC ids covered.
+- **Acceptance:** live AC ids covered. List live ACs only, never superseded ones (`spec analyze` flags them).
 - **Steps:** checkbox list, only when an implementer would benefit.
 
 ## Structure

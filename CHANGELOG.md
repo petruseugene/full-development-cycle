@@ -3,6 +3,30 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.6] — 2026-10-24
+
+### Added
+
+- feat(spec): amendments as first-class, spec analyze, AC index fix
+
+### Added
+
+- `spec amend`: scaffolds an amendment section and writes `**[superseded → AC<n>]**` markers
+- `spec analyze [--json]`: read-only report of spec, task and coverage inconsistencies
+- `skills/orchestrator/references/spec-analyze.md`: orchestrator rules for analyze and amendments
+- spec-writer Amend mode, keyed on an `Amendment:` dispatch block
+
+### Changed
+
+- `dod` fails with `spec-analyze last status = ERRORS` on analyze errors (warnings never block)
+- `brief` resolves superseded ACs to their live replacement
+
+### Fixed
+
+- #6: `brief` could not resolve amendment ACs under a level-3 `Acceptance Criteria` heading
+
+Follow-up (not shipped): the dashboard does not read the supersede marker yet.
+
 ## [1.7.5] — 2026-10-23
 
 ### Added
