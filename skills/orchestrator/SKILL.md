@@ -14,6 +14,7 @@ NOT for: quick one-liner edits, pure research / Q&A, step-by-step pair-coding.
 ## Required reading
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` (the playbook core) first; `${CLAUDE_PLUGIN_ROOT}` is the plugin root on the `Plugin root:` line below.
+   **Fast path:** flow `bugfix`, or flow `feature` on track `quick` (not escalated, no explicit lite/full; `visual_tests`, `a11y_audit`, `security_review`, `dependency_audit` all false): read only item 1 and `references/quick.md`. Hotfix, escalation: full Required reading.
 2. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/references/lifecycle.md` (§1, §1a, Bugfix flow, §1c, §4, §5, §7, §9, §10). "Playbook §1/§1a/§4/§5/§7/§9/§10" here and in the references mean this file; §2/§3/§6/§8 mean the core.
 3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `worktrees.md` (`worktrees.mode != off`), `release.md` (`ship --release`), `recipes.md` (profile recipes)
 
@@ -63,7 +64,7 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
    - `lite`: the request spans more than one area, or adds a new screen or a new API;
    - `full`: it spans several subsystems, has architecture impact, or needs wireframes for new UI.
 
-   `lite` skips discovery depth; `quick` asks nothing more, inferring `has_ui`, `has_backend`, `auto_tests`, `visual_tests` as the bugfix flow does (targeted questions only if ambiguous). `--track` only for flow `feature`; bugfix and hotfix use the quick gate set (`references/dod-gate.md`).
+   `lite` skips discovery depth; `quick` asks nothing more (inference: `references/quick.md`). `--track` only for flow `feature`; bugfix and hotfix use the quick gate set (`references/dod-gate.md`).
 
    **Separate plan.** For a medium `full` feature you may pass `--answer separate_plan=false` (tasks in spec.md, no plan-writer) and emit `> PLAN: tasks in spec — <reason>`; never ask.
 
@@ -83,7 +84,7 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
    | Implement | `dev-cycle:frontend-dev` / `dev-cycle:backend-dev` | per task tag (`mixed` → frontend-dev, or backend-dev when frontend-dev is in `skipped_skills`), parallel within each disjoint group |
    | Implement (content) | `content → dev-cycle:backend-dev` | tag `content`, any stack token; brief has `## Recipe`; grouped like any non-owner task; dod needs `implement.task=<n>` |
    | Owner step | `owner → none (wait for owner)` | tag `owner`; never dispatched |
-   | Implement (lite / quick) | frontend-dev / backend-dev | lite: one per `areas` entry (`feature set areas` first; disjoint `touches` parallel, overlaps serialized); quick: one, request text as brief |
+   | Implement (lite / quick) | frontend-dev / backend-dev | lite: one per `areas` entry (`feature set areas` first; disjoint `touches` parallel, overlaps serialized); quick: one (`references/quick.md`) |
    | Static check | `check --scope touched` (implementer, before DONE); `check --scope tree-wide --record` (you) | tree-wide unless `static_check == false`; `dev-cycle:cli-fallback` only on exit 2 or a failure surviving a fix cycle (prompt carries `check`'s output) |
    | Review | `dev-cycle:code-reviewer` | always; `review snapshot` right before each dispatch |
    | Auto-tests | `dev-cycle:auto-tester` | `auto_tests == true` |
@@ -107,27 +108,27 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
 
    **Parallel groups.** One message of N `Agent` calls per group ("Dispatch pattern", `references/parallel-groups.md`); wait for all reports before the next group; same fan-out for end-gates. Groups are recomputed every iteration (tiers by `Depends on`, batches of disjoint `Touches`); `## Execution plan` is documentation only.
 
-   **Model on every dispatch.** Every `Agent` call (all flows) passes `model: <resolved>` (omitted for `inherit`). Resolve per `lifecycle.md` §10 "Model resolution" (the four rules, first match wins; no Size-based escalation); on an invalid override emit `! MODEL: ignoring invalid override <skill>=<value>`.
+   **Model on every dispatch.** Every `Agent` call (all flows) passes `model: <resolved>` (omitted for `inherit`). Resolve per `lifecycle.md` §10 "Model resolution" (the five rules, first match wins; no Size-based escalation); on an invalid override emit `! MODEL: ignoring invalid override <skill>=<value>`.
 
    **Dispatch prompt** for every subagent:
    - The skill file (`<root>` the recorded plugin root, `<x>` the skill directory): "Read `<root>/skills/<x>/SKILL.md` and follow it. `${CLAUDE_PLUGIN_ROOT}` means `<root>`; `references/…` paths are relative to `<root>/skills/<x>/`. Do not call the Skill tool for dev-cycle skills." Fallback and nested dispatches use it too.
    - Absolute feature folder, State CLI path, the reminder to end with the YAML report (playbook core §6), and the resolved model of any nested skill it may dispatch.
    - **Full-track implementers:** run `brief <n>` before each dispatch (re-dispatches too); pass `<feature>/briefs/task-<n>.md` as the primary input plus `auto_tests`, `platform`, `design_source`, `has_ui`, not `feature.json` or a tasks slice. With a `**Wireframes:**` field add a `Wireframes (binding contract):` header listing every path absolute under the feature folder, plus: "Open every listed wireframe before writing code; the page must match each wireframe's visible structure column-for-column / element-for-element. Any AC anchored to one of these files is binding — a missing column is a review failure."
-   - **Lite:** current `feature.json`, `Area: <name>`, `Touches: <globs>`, the spec.md AC ids the area owns. **Quick:** current `feature.json` and the request text verbatim.
-   - **Lessons (lite and quick only; no brief).** Before each dispatch run `lessons list --touches "<globs>"` (lite: the area's `touches`; quick: the request's globs) and, only when non-empty, append the output verbatim (its first line is already the advisory label; add no second `Lessons (advisory):` header). Briefs carry `## Lessons`.
+   - **Lite (quick: `references/quick.md`):** current `feature.json`, `Area: <name>`, `Touches: <globs>`, the spec.md AC ids the area owns.
+   - **Lessons (lite and quick only; no brief).** Before each dispatch run `lessons list --touches "<globs>"` (lite: the area's `touches`) and, only when non-empty, append the output verbatim (no second `Lessons (advisory):` header). Briefs carry `## Lessons`.
    - **Threat notes (lite).** When spec.md has `## Threat notes`, append that section verbatim to the implementer prompt, as with lessons. Briefs copy it; reviewers read it.
    - All other subagents: the current `feature.json`.
 
 3. **Read only the YAML report** each subagent returns, never the long output files. Record it: `history add --phase <p> --subagent <skill> --status <status> --model <resolved|inherit> --duration "<duration>" --tokens "<tokens_used>"` (fallback) plus `--agent-id <agentId>` (from the launch result or task-notification) on **every** subagent entry, and `--concerns` when present. Implementers also get `--summary "<one-line summary>"` (the dependency summary in `brief`). Phase keys: `implement.task=<n>` (full), `implement.area=<name>` (lite), `implement` (quick).
 
-4. **Route per `lifecycle.md` §7** plus the parallel rules below. On `CHANGES_REQUIRED` / `FAILED` re-dispatch the implementer with the artefact path; after 3 cycles `[BLOCKED]` and escalate. `full` routes by `## Task N` sections, `lite` by `## Area <name>` (3-cycle limit per area), `quick` to the single implementer (`references/collision-and-fix-routing.md`).
+4. **Route per `lifecycle.md` §7** plus the parallel rules below. On `CHANGES_REQUIRED` / `FAILED` re-dispatch the implementer with the artefact path; after 3 cycles `[BLOCKED]` and escalate. `full` routes by `## Task N` sections, `lite` by `## Area <name>` (3-cycle limit per area), `quick` per `references/quick.md`.
 
    - **Sibling collision.** Compare members' `touches_expanded` plus declared `Touches` pairwise; on a shared written path log `history add --phase conflict` and reschedule the **later** task (plan order) **serially next cycle** (counts against its 3-cycle limit).
    - **Cross-cutting findings** (`## Cross-cutting`, or non-attributable) go to the task whose `Touches` most overlap (lite: area `touches`); none: **escalate with the finding text**, never guess.
    - **`NEEDS_CONTEXT` in a group:** let the group finish, then re-dispatch that task **serially next iteration** with the context.
    - **Only-failed-gates re-run** after a fix cycle (dod reads the last status per gate).
 
-5. **Statuses** only through the CLI (`task <n> status "<S>"`, `spec status <S>`); the IMPL-DONE→DONE and spec DONE flips happen inside the feature commit. Task rules are for `full`; `lite` flips spec.md only, `quick` nothing (progress lives in history).
+5. **Statuses** only through the CLI (`task <n> status "<S>"`, `spec status <S>`); the IMPL-DONE→DONE and spec DONE flips happen inside the feature commit. Task rules are for `full`; `lite` flips spec.md only, `quick` nothing.
    - Implementer `DONE` → `[IMPL-DONE]`, **not** `[DONE]` (reserved for the feature commit). Fix-cycle findings → `[IN REVIEW]` while the implementer re-runs, then back to `[IMPL-DONE]`; `[IN PROGRESS]` while one runs; `[BLOCKED]` on 3-cycle exhaustion or unresolvable collision.
    - A pre-task phase reporting `BLOCKED`: `feature set status blocked` and escalate; `feature set status active` on resume.
 

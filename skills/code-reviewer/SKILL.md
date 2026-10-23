@@ -40,6 +40,8 @@ disable-model-invocation: true
 7. The relevant `dev-cycle:frontend-dev` or `dev-cycle:backend-dev` `references/best-practices.md`
    + `pitfalls.md` for any task tagged with that stack
 
+**Track quick / flow bugfix:** the request text in the dispatch prompt (`Request (verbatim):`) is the acceptance source; there is no spec.md, tasks file or `areas`, so skip items 5–6.
+
 ## The job
 
 1. Determine the base commit:
