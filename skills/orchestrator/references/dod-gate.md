@@ -79,6 +79,10 @@ With `separate_plan: false` the required set has no `plan` gate. If the tasks
 source yields no tasks in that mode, dod fails with gate `tasks`:
 `! DOD-GATE FAILED: tasks last status = MISSING; aborting before push.`
 
+**Open decisions.** For flow `feature` on track `full` or `lite` (absent track = full), when spec.md exists and has any `### D<n>:` heading under `## Open decisions` (even malformed), dod fails with gate `decisions`:
+`! DOD-GATE FAILED: decisions last status = OPEN; aborting before push.`
+It is checked after `tasks` and before the history gates, is not a history gate and is not in the required set. Quick track, bugfix, hotfix and specs without the section are unaffected. Resolve it by re-running the decisions step (`open-decisions.md`), never by editing spec.md.
+
 A lite feature with absent or empty `areas` fails with
 `! DOD-GATE FAILED: implement.area=<none> last status = MISSING; aborting before push.`
 

@@ -3,6 +3,23 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.5] — 2026-10-23
+
+### Added
+
+- feat(spec): ask open product decisions before planning
+
+### Added
+
+- `spec decisions [--json]`: read-only state CLI verb that lists the `## Open decisions` block of `spec.md`
+- `skills/orchestrator/references/open-decisions.md`: orchestrator rules for asking open decisions
+- spec-writer writes product forks as `## Open decisions` and folds the owner's answers into `## Decisions`
+
+### Changed
+
+- orchestrator: on tracks `full` and `lite` it asks the owner all open decisions in one batched step before wireframes, plan or implementation
+- `dod` fails with `decisions last status = OPEN` while `spec.md` has open decisions
+
 ## [1.7.4] — 2026-10-23
 
 ### Added

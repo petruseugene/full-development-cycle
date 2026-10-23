@@ -156,11 +156,10 @@ test('AC13: README drops the stale --track claim and mentions the fast path; CHA
   assert.match(r, /references\/quick\.md/);
   assert.match(r, /sonnet/);
   const c = rd('CHANGELOG.md');
-  const u = c.slice(c.indexOf('## [Unreleased]'));
-  assert.ok(c.includes('## [Unreleased]'));
-  const sec = u.slice(0, u.indexOf('\n## [', 5) > 0 ? u.indexOf('\n## [', 5) : undefined);
-  assert.match(sec, /quick\.md|fast path/i);
-  assert.match(sec, /quick-path\.test/);
+  assert.match(c.split('\n').filter((l) => l.startsWith('## '))[0], /^## \[(Unreleased|\d+\.\d+\.\d+)\]/);
+  // release-proof: the entry may live in any Unreleased or x.y.z section
+  const secs = c.split(/^## /m).slice(1).filter((x) => /^\[(Unreleased|\d+\.\d+\.\d+)\]/.test(x));
+  assert.ok(secs.some((x) => /quick\.md|fast path/i.test(x) && /quick-path\.test/.test(x)), 'no section mentions the quick fast path');
 });
 
 test('AC14: quick.md ends with a Verify cost note', () => {
