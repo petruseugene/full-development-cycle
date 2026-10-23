@@ -266,13 +266,16 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `task <n> status <S>` | Set one task's status |
 | `task --all-from IMPL-DONE --to DONE` | Bulk status flip |
 | `spec status <S>` | Rewrite the status in `spec.md` frontmatter |
+| `spec amend --title <t> [--date YYYY-MM-DD] [--json]` | Insert an `## Amendment <date> — <t>` section with an `### Acceptance Criteria (amendment <date>)` heading and print `next AC: AC<n>` |
+| `spec amend --supersede AC<x>=AC<y>[,AC<z>] [--json]` | Mark AC<x> as `**[superseded → AC<y>]**`; all pairs validated before one write |
+| `spec analyze [--json]` | Read-only: report spec, task and coverage inconsistencies (errors exit 1, warnings exit 0) |
 | `spec decisions [--json]` | Read-only: list the `## Open decisions` of `spec.md` (exit 2 on a malformed block) |
 | `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]` | Append a history entry; measured usage is attached when an agent id is given |
 | `groups [--all]` | Compute parallel groups from `Touches` and `Depends on` |
 | `brief <n>` | Write `briefs/task-<n>.md` |
 | `check [--scope touched\|tree-wide] [--files a,b] [--steps lint,typecheck,format,test] [--record] [--tail n] [--timeout s]` | Run read-only lint, typecheck, format and test commands. Test output is quiet: only failures are extracted and split into touched files versus elsewhere, and a non-zero test run is never reported as PASSED |
 | `gate run <name>\|--all` | Run `extra_gates`; see the gate source rule below |
-| `dod` | Read-only definition-of-done gate. On tracks `full` and `lite` it also fails with a `decisions` check while `spec.md` still has open decisions |
+| `dod` | Read-only definition-of-done gate. On tracks `full` and `lite` it also fails with a `decisions` check while `spec.md` still has open decisions, and with a `spec-analyze` check on `spec analyze` errors |
 | `post-merge run <name>\|--all [--confirmed]` | Run `post_merge` steps from the profile |
 | `ship [--release major\|minor\|patch\|auto] [--subject s] [--body b] [--notes-file f] [--manifest path]... [--ci-timeout s]` | Replaces the old release-manager and git-agent happy path in one command: tokens, dod gate, optional version bump plus `CHANGELOG.md` (an `## [Unreleased]` heading becomes the version heading), commit, push, PR, merge and tag. Safe to re-run: finished steps are skipped |
 | `init [--preset web\|expo] [--force]` | Write a starter `.dev-cycle/project.json` from `package.json` script names. Never overwrites without `--force`; never runs scripts |

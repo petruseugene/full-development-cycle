@@ -57,3 +57,21 @@ flow: feature
 ## Combined mode (`separate_plan == false`)
 
 When `feature.json.separate_plan == false`, append the unnumbered sections `## Tasks`, `## Execution plan` and `## Task details` after `## 7. Out of Scope (v1)`, in the format defined in `skills/plan-writer/references/task-format.md`. No separate `plan.md` is written.
+
+## Amendment section (Amend mode)
+
+`spec amend --title` scaffolds the heading pair; spec-writer fills in the ACs. `spec amend --supersede` writes the canonical marker. Numbering continues globally.
+
+```markdown
+## Amendment 2026-10-24 — design v2
+
+### Acceptance Criteria (amendment 2026-10-24)
+- [ ] AC64: <observable behaviour>
+- [ ] AC65: ...
+```
+
+A replaced AC in section 6 then reads:
+
+```markdown
+- [ ] AC57: **[superseded → AC64]** <original text>
+```

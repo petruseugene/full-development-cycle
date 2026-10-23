@@ -262,3 +262,70 @@ test('AC18: ## Threat notes copied verbatim; absent => no heading', () => {
   assert.doesNotMatch(md, /## 8\. Other|zzz/);
   assert.doesNotMatch(briefOf(modelPlan('M', '`a/**`')), /Threat notes/);
 });
+
+const AMEND_SPEC = `# Spec
+
+## 6. Acceptance Criteria
+- [ ] AC1: base one
+- [ ] AC2: **[superseded → AC5]** old body text
+- [ ] AC3: (removed — D1) dropped
+
+## Правка 22.10 — design v2
+
+### 9.13. Acceptance Criteria правки
+- [ ] AC5: new five
+- [ ] AC6: new six
+
+## Tasks
+`;
+const amendPlan = (acc) => `# Plan
+
+## Tasks
+- [ ] Task 1 (backend): one
+
+### Task 1: one  \`[TODO]\`
+**Tag:** backend
+**Touches:** src/a.ts
+**Acceptance:** ${acc}
+`;
+function briefFor(acc) {
+  const fx = mkFixture({ featureJson: sampleFeatureJson({}), files: { 'plan.md': amendPlan(acc), 'spec.md': AMEND_SPEC } });
+  try {
+    const r = runCli(['brief', '1'], { cwd: fx.root });
+    const f = path.join(fx.featureDir, 'briefs', 'task-1.md');
+    return { r, md: fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '' };
+  } finally { fx.cleanup(); }
+}
+
+test('AC6: brief indexes amendment ACs under a level-3 heading', () => {
+  const { r, md } = briefFor('AC5, AC6');
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(md.includes('AC5: new five') && md.includes('AC6: new six'));
+});
+
+test('AC6: superseded AC resolves to its replacement exactly once', () => {
+  const { r, md } = briefFor('AC2, AC5');
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(md.includes('> AC2 superseded → AC5 (resolved)'), md);
+  assert.equal(md.split('AC5: new five').length - 1, 1);
+  assert.ok(!md.includes('old body text'));
+});
+
+test('AC6: removed AC prints verbatim, undefined AC exits 2', () => {
+  const ok = briefFor('AC3');
+  assert.equal(ok.r.status, 0, ok.r.stderr);
+  assert.ok(ok.md.includes('- [ ] AC3: (removed — D1) dropped'));
+  const bad = briefFor('AC77');
+  assert.equal(bad.r.status, 2);
+  assert.match(bad.r.stderr, /cannot resolve/);
+});
+
+test('AC6: cyclic supersede chain exits 2', () => {
+  const spec = AMEND_SPEC.replace('AC5: new five', 'AC5: **[superseded → AC2]** loop');
+  const fx = mkFixture({ featureJson: sampleFeatureJson({}), files: { 'plan.md': amendPlan('AC2'), 'spec.md': spec } });
+  try {
+    const r = runCli(['brief', '1'], { cwd: fx.root });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /cannot resolve/);
+  } finally { fx.cleanup(); }
+});

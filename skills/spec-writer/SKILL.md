@@ -45,9 +45,19 @@ Settle product forks with the owner instead of silently. Write `## Open decision
 When the dispatch prompt contains a `Decisions (owner answers):` block, edit the existing spec.md in place; do not rewrite it.
 
 - Move each answered decision to `## Decisions` (`- **D<n>:** <question> → <answer> (<source>) — <consequence>`; source `owner`, `owner: other` for free text, or `owner: defaults OK` for `all: defaults OK`, which takes each recommended option). Update the requirements and ACs it affects.
-- Never renumber existing AC ids. A dropped AC keeps its id with the text `(removed — D<n>)`; new ACs are appended after the last id.
+- Never renumber existing AC ids. A dropped AC keeps its id with the text `(removed — D<n>)` (the parsed removed marker: analyze ignores it); new ACs are appended after the last id.
 - Remove `## Open decisions` when it is empty. Add a new open decision only when an answer creates a genuine new fork.
 - Finish by running `node <State CLI> spec decisions --feature <feature folder>` as a self-check; it must print `no open decisions` (or only the new forks).
+
+### Amend mode
+
+When the dispatch prompt contains an `Amendment:` block (owner change request on an in-flight feature), edit the existing spec.md in place; do not rewrite it.
+
+1. Run `node <State CLI> spec amend --title "<short title>" --feature <feature folder>`. It inserts `## Amendment <date> — <title>` with `### Acceptance Criteria (amendment <date>)` and prints `next AC: AC<n>`.
+2. Write the new ACs under that heading, starting at the printed id. Continue the global numbering; never renumber existing ACs.
+3. For each replaced AC run `spec amend --supersede AC<old>=AC<new>[,AC<new2>] --feature <feature folder>`. Never hand-write the `[superseded → …]` marker.
+4. Update Requirements as needed. Do not add placeholder ACs.
+5. Finish with `spec analyze --feature <feature folder>` as a self-check; warnings are allowed, errors must be fixed.
 
 ## Combined spec + plan mode (`separate_plan == false`)
 

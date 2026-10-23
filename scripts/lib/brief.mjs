@@ -10,6 +10,7 @@ import { globsOverlap } from './glob-overlap.mjs';
 import { filterByTouches, sanitizeText, sortNewest } from './lessons.mjs';
 import { isContentTask } from './plan.mjs';
 import { SKILL_ALIASES, isAlias } from './profile.mjs';
+import { parseAcIds, parseSpecAcs, resolveAc } from './spec-acs.mjs';
 
 /** Longest run of consecutive backticks in `s`. */
 function longestBacktickRun(s) {
@@ -29,57 +30,19 @@ export function tableCell(s) {
   return String(s).replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
 }
 
-const AC_LINE_RE = /^\s*(?:[-*]\s*)?(?:\[[ xX]\]\s*)?\**AC(\d+)\**\s*(?:\([^)]*\)\s*)?[:.)\-–—]/;
-
 /**
- * AC lines (with continuation lines) from the acceptance-criteria sections of
- * spec.md: every `##` section whose heading mentions "acceptance criteria"
- * (covers §6 and the appended Wireframe AC section).
+ * AC lines (with continuation lines) from every acceptance-criteria section of
+ * spec.md, at any heading level (see spec-acs.mjs).
  * @param {string} specText
  * @returns {Map<number, string>}
  */
 export function indexSpecAcs(specText) {
-  const acs = new Map();
-  let inScope = false;
-  let fence = false;
-  let cur = null; // {n, lines}
-  const flush = () => {
-    if (cur && !acs.has(cur.n)) acs.set(cur.n, cur.lines.join('\n').replace(/\s+$/, ''));
-    cur = null;
-  };
-  for (const raw of specText.split('\n')) {
-    const line = raw.replace(/\r$/, '');
-    if (/^\s*(```|~~~)/.test(line)) fence = !fence;
-    if (!fence && /^#{1,2}\s/.test(line)) {
-      flush();
-      inScope = /acceptance criteria/i.test(line);
-      continue;
-    }
-    if (!inScope) continue;
-    if (!fence && /^#{3,6}\s/.test(line)) { flush(); continue; }
-    const m = AC_LINE_RE.exec(line);
-    if (m && !fence) {
-      flush();
-      cur = { n: Number(m[1]), lines: [line] };
-    } else if (cur) {
-      cur.lines.push(line); // blank lines and paragraphs stay inside the AC
-    }
-  }
-  flush();
-  return acs;
+  const out = new Map();
+  for (const [n, ac] of parseSpecAcs(specText).acs) out.set(n, ac.text);
+  return out;
 }
 
-/** AC numbers referenced by an `**Acceptance:**` value, ranges expanded. */
-export function parseAcIds(raw) {
-  const ids = [];
-  for (const m of raw.matchAll(/\bAC\s*(\d+)(?:\s*[–-]\s*(?:AC\s*)?(\d+))?/g)) {
-    const a = Number(m[1]);
-    const b = m[2] === undefined ? a : Number(m[2]);
-    if (b < a) throw new UsageError(`invalid AC range AC${a}-AC${b}`);
-    for (let i = a; i <= b; i++) if (!ids.includes(i)) ids.push(i);
-  }
-  return ids;
-}
+export { parseAcIds };
 
 function dependencySummary(fj, d) {
   const hist = Array.isArray(fj.history) ? fj.history : [];
@@ -148,12 +111,33 @@ export function buildBrief({ task, specText, fj, lessons = [] }) {
   if (ids.length === 0) {
     out.push(task.acceptanceRaw ? task.acceptanceRaw : '(none listed)', '');
   } else {
-    const index = indexSpecAcs(specText);
-    const missing = ids.filter((n) => !index.has(n));
+    const { acs } = parseSpecAcs(specText);
+    const resolved = new Map();
+    const missing = [];
+    for (const n of ids) {
+      try { resolved.set(n, resolveAc(acs, n)); } catch (e) {
+        if (!(e instanceof UsageError)) throw e;
+        missing.push(n);
+      }
+    }
     if (missing.length) {
       throw new UsageError(`task ${task.n}: cannot resolve ${missing.map((n) => `AC${n}`).join(', ')} in spec.md`);
     }
-    for (const n of ids) out.push(index.get(n));
+    const printed = new Set();
+    const block = (n) => {
+      if (printed.has(n)) return;
+      printed.add(n);
+      out.push(acs.get(n).text);
+    };
+    for (const n of ids) {
+      const { live } = resolved.get(n);
+      if (live.length === 1 && live[0] === n) { block(n); continue; }
+      if (!printed.has(`note${n}`)) {
+        printed.add(`note${n}`);
+        out.push(`> AC${n} superseded → ${live.map((x) => `AC${x}`).join(', ')} (resolved)`);
+      }
+      for (const l of live) block(l);
+    }
     out.push('');
   }
 
