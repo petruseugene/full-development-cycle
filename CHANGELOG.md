@@ -3,7 +3,7 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
-## [Unreleased]
+## [1.7.2] — 2026-10-23
 
 ### Fixed
 
