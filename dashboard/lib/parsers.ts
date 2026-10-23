@@ -1,4 +1,6 @@
 import matter from 'gray-matter';
+import { cleanExcerpt, fullProse, truncateWords } from './excerpt';
+import { parseFilesList, parseStepItems } from './task-fields';
 import type {
   Task,
   TaskStatus,
@@ -115,7 +117,7 @@ export function parsePlanMd(raw: string): Task[] {
       }
     }
     const filesM = body.match(/\*\*Files:\*\*\s*([^\n]+)/i);
-    if (filesM) t.files = filesM[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+    if (filesM) t.files = parseFilesList(filesM[1]);
     const accM = body.match(/\*\*Acceptance:\*\*\s*([\s\S]*?)(?=\*\*Steps:\*\*|$)/i);
     if (accM) t.acceptance = accM[1].trim();
     const stepM = body.match(/\*\*Steps:\*\*([\s\S]*?)$/i);
@@ -124,12 +126,17 @@ export function parsePlanMd(raw: string): Task[] {
         .split(/\r?\n/)
         .map((l) => l.replace(/^\s*-\s*\[[ x]\]\s*/, '').trim())
         .filter((l) => l && !l.startsWith('#'));
+      t.stepItems = parseStepItems(stepM[1]);
     }
+    const full = fullProse(body);
+    if (full) t.fullDescription = full;
+    // First paragraph with real prose: skip the **Tag/Touches/...** metadata
+    // block, Files/Acceptance/Steps scaffolding, and rules.
     const firstPara = body
       .split(/\n\s*\n/)
-      .map((p) => p.trim())
-      .find((p) => p && !/^\*\*(Files|Acceptance|Steps):/i.test(p));
-    if (firstPara && !t.description) t.description = firstPara.slice(0, 240);
+      .map((p) => cleanExcerpt(p))
+      .find((p) => p);
+    if (firstPara && !t.description) t.description = truncateWords(firstPara, 240);
   }
 
   return tasks.sort((a, b) => a.index - b.index);

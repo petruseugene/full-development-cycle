@@ -45,3 +45,24 @@ describe('globals.css new chip rules', () => {
     });
   }
 });
+
+describe('TaskCard excerpt', () => {
+  it('cleans markdown and drops metadata fields', async () => {
+    const { cleanExcerpt } = await import('@/lib/excerpt');
+    const raw =
+      '**Tag:** backend **Touches:** `scripts/lib/core.mjs`, `a.test.mjs` **Depends on:** none **Size:** M\nAdd **exported** `mainWorktreeRoot` helper';
+    expect(cleanExcerpt(raw)).toBe('Add exported mainWorktreeRoot helper');
+    expect(cleanExcerpt('**Tag:** backend\n**Touches:** `x`\n**Depends on:** none\n**Size:** M')).toBe('');
+    expect(cleanExcerpt('- [ ] Do the *thing*\n- [x] and `that`')).toBe('Do the thing and that');
+  });
+  it('renders no excerpt when nothing remains, clean text otherwise', () => {
+    const empty = render(
+      <TaskCard task={mk({ description: '**Tag:** backend **Size:** M' })} feature={feature} onOpen={() => {}} />,
+    );
+    expect(empty.container.querySelector('p')).toBeNull();
+    const full = render(
+      <TaskCard task={mk({ description: '**Tag:** backend\nWire the `Board` **now**' })} feature={feature} onOpen={() => {}} />,
+    );
+    expect(full.container.querySelector('p')?.textContent).toBe('Wire the Board now');
+  });
+});

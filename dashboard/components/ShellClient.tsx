@@ -13,7 +13,15 @@ import { pinFeature, readPins, subscribePins, unpinFeature, writePins } from '@/
 
 type PaletteMode = 'search' | 'pin' | null;
 
-export function ShellClient({ agent, children }: { agent: AgentStatus; children: ReactNode }) {
+export function ShellClient({
+  agent,
+  projectLabel = '',
+  children,
+}: {
+  agent: AgentStatus;
+  projectLabel?: string;
+  children: ReactNode;
+}) {
   const agentEnabled = agent.enabled;
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
@@ -198,7 +206,7 @@ export function ShellClient({ agent, children }: { agent: AgentStatus; children:
         agentEnabled,
       }}
     >
-      <TopBar onSearch={() => setPaletteMode('search')} onNew={() => setNewFeatureOpen(true)} />
+      <TopBar projectLabel={projectLabel} onSearch={() => setPaletteMode('search')} onNew={() => setNewFeatureOpen(true)} />
       <div className="flex">
         <Sidebar
           features={features}

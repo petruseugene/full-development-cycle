@@ -3,6 +3,7 @@
 import type { Feature, Task } from '@/lib/types';
 import {
   bucketBoard,
+  isCollapsedColumn,
   sortColumnItems,
   type GroupKey,
   type SortKey,
@@ -50,7 +51,7 @@ export function Board({
   // tag/agent → grid with as many columns as buckets.
   const gridClass =
     groupKey === 'status'
-      ? 'grid grid-cols-5 gap-4'
+      ? 'flex gap-4 overflow-x-auto items-start pb-2'
       : groupKey === 'feature'
         ? 'flex flex-col gap-6'
         : 'grid gap-4';
@@ -62,7 +63,7 @@ export function Board({
         };
 
   return (
-    <section className="px-6 pb-8 pt-1">
+    <section className="px-6 pb-8 pt-1 min-w-0">
       <div className={gridClass} style={gridStyle}>
         {columns.map((col) => {
           // For feature grouping, look up the underlying Feature record so we can
@@ -73,19 +74,28 @@ export function Board({
               ? featureById.get(col.key) ?? null
               : null;
           const currentPhase = colFeature?.meta?.current_phase ?? null;
+          const collapsed = isCollapsedColumn(groupKey, col);
 
           return (
             <div
               key={col.key}
-              className="flex flex-col gap-3 col-scroll"
-              style={
-                groupKey === 'feature'
-                  ? undefined
-                  : { maxHeight: 'calc(100vh - 248px)', overflow: 'auto' }
-              }
+              className={'flex flex-col gap-3 col-scroll' + (groupKey === 'status' ? ' shrink-0' : '')}
+              data-collapsed={collapsed ? 'true' : undefined}
+              style={{
+                ...(groupKey === 'feature'
+                  ? {}
+                  : { maxHeight: 'calc(100vh - 248px)', overflow: 'auto' }),
+                // Status columns: populated ones share the row (min 216px),
+                // empty ones shrink to a compact header + count.
+                ...(groupKey === 'status'
+                  ? collapsed
+                    ? { flex: '0 0 96px', width: 96 }
+                    : { flex: '1 1 216px', minWidth: 216 }
+                  : {}),
+              }}
             >
               <div className="flex items-center sticky top-0 bg-canvas pt-1 pb-2 z-10">
-                <div className="flex items-center gap-2 w-full">
+                <div className="flex items-center gap-2 w-full min-w-0">
                   {col.dot ? (
                     col.pulse && col.items.length > 0 ? (
                       <span
@@ -96,7 +106,7 @@ export function Board({
                       <span className={`sd ${col.dot}`} />
                     )
                   ) : null}
-                  <h3 className="text-[13px] font-semibold text-ink-800">{col.label}</h3>
+                  <h3 className="text-[13px] font-semibold text-ink-800 truncate" title={col.label}>{col.label}</h3>
                   <span className="col-pill">{col.items.length}</span>
                   {colFeature ? (
                     <>

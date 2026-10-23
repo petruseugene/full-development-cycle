@@ -19,6 +19,8 @@ import {
   type SortKey,
 } from '@/lib/board-filters';
 import { useSnapshot } from '@/lib/snapshot-context';
+import { buildKPIs } from '@/lib/kpis';
+import { featuresInScope } from '@/lib/board-filters';
 
 // Close-grace window (ms) — R22. Card clicks landing inside this window
 // after the chat drawer closes are treated as "click-outside to dismiss"
@@ -50,6 +52,16 @@ export default function BoardPage() {
     () => applyFilters(baseBoardFeatures, filters),
     [baseBoardFeatures, filters],
   );
+
+  // KPIs follow the board: same feature set the active filters leave visible.
+  // Server-side budget / rate (env-configured) ride along in the snapshot.
+  const scopedKpis = useMemo(() => {
+    if (!snapshot) return null;
+    return buildKPIs(featuresInScope(boardFeatures, filters), {
+      budget: snapshot.kpis?.agentSpend?.budget,
+      costPerKtok: snapshot.kpis?.agentSpend?.costPerKtok,
+    });
+  }, [snapshot, boardFeatures, filters]);
 
   const openTask = (task: Task, feature: Feature) => {
     // R22 close grace: when the chat drawer was just dismissed by a click
@@ -119,7 +131,7 @@ export default function BoardPage() {
 
   return (
     <>
-      {snapshot && <KPIStrip kpis={snapshot.kpis} />}
+      {scopedKpis && <KPIStrip kpis={scopedKpis} />}
       <Toolbar
         syncedAt={snapshot?.generatedAt ?? null}
         filters={filters}

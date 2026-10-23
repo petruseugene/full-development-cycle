@@ -6,12 +6,14 @@ import type {
   DashboardSnapshot,
   Feature,
   HistoryEvent,
-  KPIs,
   Task,
   TaskStatus,
 } from './types';
+import { collectIds, parseSpecIds } from './spec-ids';
 import { parseFeatureJson, parsePlanMd, parseReviewMd, parseSpecStatus, parseTestReportMd } from './parsers';
-import { DASHBOARD_BUDGET_DOLLARS, DASHBOARD_COST_PER_KTOK } from './config';
+import { buildKPIs, closeTasksOfClosedFeature } from './kpis';
+
+export { buildKPIs };
 
 function repoRoot(): string {
   const env = process.env.DASHBOARD_FEATURES_DIR;
@@ -113,7 +115,7 @@ export async function loadFeatures(): Promise<Feature[]> {
     const meta = featureRaw ? parseFeatureJson(featureRaw) : null;
     // R41: with no plan.md, fall back to a `## Tasks` section in spec.md.
     const taskSource = planRaw ?? (specRaw && /^## Tasks\s*$/m.test(specRaw) ? specRaw : null);
-    const tasks = taskSource ? parsePlanMd(taskSource) : [];
+    const tasks = closeTasksOfClosedFeature(taskSource ? parsePlanMd(taskSource) : [], meta);
     const reviews = reviewRaw ? parseReviewMd(reviewRaw) : [];
     const testReport = testRaw ? parseTestReportMd(testRaw) : null;
 
@@ -146,6 +148,7 @@ export async function loadFeatures(): Promise<Feature[]> {
       reviews,
       testReport,
       hasSpec: !!specRaw,
+      specIds: resolveSpecIds(specRaw, tasks),
       hasDiscovery: !!discoveryRaw,
       hasWireframes: wireframeFiles.length > 0,
       hasPlan: !!taskSource,
@@ -174,133 +177,6 @@ async function listFiles(dir: string): Promise<string[]> {
   } catch {
     return [];
   }
-}
-
-export function buildKPIs(features: Feature[]): KPIs {
-  const allTasks = features.flatMap((f) => f.tasks);
-  const tasksInFlight = allTasks.filter(
-    (t) => t.status === 'IN_PROGRESS' || t.status === 'IN_TESTING',
-  ).length;
-  const blocked = allTasks.filter((t) => t.status === 'BLOCKED').length;
-
-  const cycles = features
-    .filter((f) => f.derived.overallStatus === 'DONE' && f.meta?.history?.length)
-    .map((f) => totalDurationHours(f.meta!.history))
-    .filter((h): h is number => h != null && h > 0);
-  const avgCycleHours = cycles.length
-    ? cycles.reduce((a, b) => a + b, 0) / cycles.length
-    : null;
-
-  const tokens_k = features.reduce((sum, f) => {
-    const t = f.meta?.totals?.by_subagent ?? {};
-    return sum + Object.values(t).reduce((s, x) => s + (x.tokens_k || 0), 0);
-  }, 0);
-  const dollars = +features
-    .reduce((sum, f) => {
-      const m = f.meta?.totals?.measured;
-      if (m && Number(m.measured_entries) > 0) return sum + (Number(m.usd_est) || 0);
-      const by = f.meta?.totals?.by_subagent ?? {};
-      const k = Object.values(by).reduce((s, x) => s + (Number(x?.tokens_k) || 0), 0);
-      return sum + k * DASHBOARD_COST_PER_KTOK;
-    }, 0)
-    .toFixed(2);
-
-  const trends = buildTrends(features);
-
-  return {
-    activeFeatures: features.filter((f) => f.derived.overallStatus !== 'DONE').length,
-    tasksInFlight,
-    blocked,
-    avgCycleHours,
-    agentSpend: { dollars, tokens: Math.round(tokens_k * 1000), budget: DASHBOARD_BUDGET_DOLLARS },
-    trends,
-  };
-}
-
-function totalDurationHours(history: HistoryEvent[]): number | null {
-  const secs = history.reduce((s, h) => s + (h.duration_s || 0), 0);
-  return secs > 0 ? +(secs / 3600).toFixed(2) : null;
-}
-
-/**
- * Returns an array of `daysBack` UTC YYYY-MM-DD date strings, oldest -> newest,
- * with the last entry being today (UTC). Used for per-day trend bucketing.
- */
-function bucketByDay(daysBack = 9): string[] {
-  const out: string[] = [];
-  const today = new Date();
-  // Anchor at UTC midnight for the current day.
-  const anchor = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  const dayMs = 24 * 60 * 60 * 1000;
-  for (let i = daysBack - 1; i >= 0; i--) {
-    out.push(new Date(anchor - i * dayMs).toISOString().slice(0, 10));
-  }
-  return out;
-}
-
-function dayKey(ts: string | undefined | null): string | null {
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
-}
-
-function buildTrends(features: Feature[]): KPIs['trends'] {
-  const days = bucketByDay(9);
-
-  // activeFeatures: per day, count features created on or before that day
-  // whose overall status (as-of-today) is not DONE. This is the documented
-  // R6 approximation since we lack per-day phase snapshots.
-  const activeFeatures = days.map((day) =>
-    features.filter((f) => {
-      const created = dayKey(f.meta?.created);
-      if (!created) return false;
-      if (created > day) return false;
-      return f.derived.overallStatus !== 'DONE';
-    }).length,
-  );
-
-  // blocked: per day, count of BLOCKED history events whose ts falls on that day.
-  const blockedByDay = new Map<string, number>();
-  for (const f of features) {
-    for (const ev of f.meta?.history ?? []) {
-      if (ev.status !== 'BLOCKED') continue;
-      const k = dayKey(ev.ts);
-      if (!k) continue;
-      blockedByDay.set(k, (blockedByDay.get(k) ?? 0) + 1);
-    }
-  }
-  const blocked = days.map((day) => blockedByDay.get(day) ?? 0);
-
-  // cycleHours: per day, mean cycle hours among DONE features whose latest
-  // history entry falls on that day. Carry forward previous day's value when
-  // empty so the sparkline has no visual gaps. Initial day defaults to 0.
-  const cycleByDay = new Map<string, number[]>();
-  for (const f of features) {
-    if (f.derived.overallStatus !== 'DONE') continue;
-    const history = f.meta?.history ?? [];
-    if (!history.length) continue;
-    const latest = history[history.length - 1];
-    const k = dayKey(latest?.ts);
-    if (!k) continue;
-    const hours = totalDurationHours(history);
-    if (hours == null) continue;
-    const arr = cycleByDay.get(k) ?? [];
-    arr.push(hours);
-    cycleByDay.set(k, arr);
-  }
-  const cycleHours: number[] = [];
-  let last = 0;
-  for (const day of days) {
-    const arr = cycleByDay.get(day);
-    if (arr && arr.length) {
-      const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-      last = +mean.toFixed(2);
-    }
-    cycleHours.push(last);
-  }
-
-  return { activeFeatures, blocked, cycleHours };
 }
 
 export function buildTicker(features: Feature[]): HistoryEvent[] {
@@ -393,4 +269,14 @@ export async function buildSnapshot(): Promise<DashboardSnapshot> {
 
 export function featuresRootPath(): string {
   return repoRoot();
+}
+
+function resolveSpecIds(specRaw: string | null, tasks: Task[]): Feature['specIds'] {
+  if (!specRaw) return undefined;
+  const wanted = collectIds(tasks.map((t) => t.acceptance));
+  if (!wanted.length) return undefined;
+  const all = parseSpecIds(specRaw);
+  const out: NonNullable<Feature['specIds']> = {};
+  for (const id of wanted) if (all[id]) out[id] = all[id];
+  return Object.keys(out).length ? out : undefined;
 }

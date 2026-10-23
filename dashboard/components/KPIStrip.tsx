@@ -1,4 +1,6 @@
 import type { KPIs } from '@/lib/types';
+import { formatTokens } from '@/lib/format';
+import { spendBudgetLine } from '@/lib/kpi-format';
 
 function sparklinePoints(values: number[], width = 80, height = 28): string {
   if (!values.length) return '';
@@ -25,7 +27,7 @@ export function KPIStrip({ kpis }: { kpis: KPIs }) {
   const cycleStr = formatHours(kpis.avgCycleHours);
   const [whole, rest] = cycleStr.split('·');
   return (
-    <section className="px-6 py-4 grid grid-cols-5 gap-3 hair bg-white">
+    <section className="px-6 py-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 hair bg-white">
       <Card title="Active features" sub={`${kpis.activeFeatures} open`}>
         <Stat>{kpis.activeFeatures}</Stat>
         <svg viewBox="0 0 80 28" className="w-[80px] h-7">
@@ -65,21 +67,30 @@ export function KPIStrip({ kpis }: { kpis: KPIs }) {
         </svg>
       </Card>
 
-      <Card title="Agent spend" sub={`budget ${Math.round((kpis.agentSpend.dollars / kpis.agentSpend.budget) * 100)}% of $${kpis.agentSpend.budget}`}>
-        <div className="text-[26px] leading-none font-semibold text-ink-900 tracking-tight">
-          ${Math.floor(kpis.agentSpend.dollars)}.<span className="text-ink-400">{(kpis.agentSpend.dollars % 1).toFixed(2).slice(2)}</span>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="mono text-[10.5px] text-ink-500">{(kpis.agentSpend.tokens / 1_000_000).toFixed(1)}M tok</div>
-          <div className="w-[72px] h-1 rounded-full bg-ink-100 overflow-hidden">
-            <div
-              className="h-full bg-primary"
-              style={{ width: `${Math.min(100, (kpis.agentSpend.dollars / kpis.agentSpend.budget) * 100)}%` }}
-            />
-          </div>
-        </div>
-      </Card>
+      <SpendCard spend={kpis.agentSpend} />
     </section>
+  );
+}
+
+function SpendCard({ spend }: { spend: KPIs['agentSpend'] }) {
+  const line = spendBudgetLine(spend);
+  return (
+    <Card title="Agent spend" sub={line.label}>
+      <div className="text-[26px] leading-none font-semibold text-ink-900 tracking-tight">
+        ${Math.floor(spend.dollars)}.<span className="text-ink-400">{(spend.dollars % 1).toFixed(2).slice(2)}</span>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        {/* Same unit and source as the Spend by model panel total (billable ktok). */}
+        <div className="mono text-[10.5px] text-ink-500" title="Billable tokens, same total as Spend by model">
+          {formatTokens(spend.tokens / 1000)} tok
+        </div>
+        {line.pct != null ? (
+          <div className="w-[72px] h-1 rounded-full bg-ink-100 overflow-hidden">
+            <div className="h-full bg-primary" style={{ width: `${Math.min(100, line.pct)}%` }} />
+          </div>
+        ) : null}
+      </div>
+    </Card>
   );
 }
 
