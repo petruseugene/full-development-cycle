@@ -19,6 +19,35 @@ Pipeline: **discovery → spec → plan → parallel implementation → review a
 - **Dashboard**: a local Next.js board that watches `docs/features/` of your project.
 - **Optional phases** toggled per feature: automated tests, visual tests, accessibility audit, dependency audit, security review, release management, static checks.
 
+## Why dev-cycle
+
+Built for and used daily on a production app. What it adds on top of a prompt-driven workflow:
+
+- **Gates live on disk, not in the prompt.** Task status, history and the definition-of-done gate are kept in plain files by the state CLI. `ship` and `git merge` refuse to merge while a required gate's last entry is not `DONE`, `APPROVED` or `PASSED`, so a skipped review or test phase blocks the merge mechanically.
+- **Visual verdict computed from measurements.** `visual check` and `visual verdict` compare screens against `profile.visual` (support, scale within a tolerance, overlap, tap-target size, forbidden colours) using the layout hierarchy, DOM rects and pixels. A vision estimate only fills a check the CLI could not measure and never overrides a measured failure.
+- **Measured cost from transcripts.** `history add --agent-id` reads the subagent transcript (input, output and cache tokens per model, nested agents included) and attaches a USD estimate; it falls back to the agent's own estimate, with a warning, when no transcript is found. `report` breaks cost down per agent, model, phase and feature, with trends and a track comparison.
+- **Owner and content work inside the flow.** `owner` tasks are manual steps the orchestrator waits on (`> OWNER: … (waiting)`) and closes only on your explicit confirmation. `content` tasks are briefed to run profile `recipes` through `recipe run`, which validates parameters and runs without a shell. `post_merge` steps marked `confirm: true` never run without `--confirmed`.
+- **A project profile that is executed, not just read.** `commands` drive `check`, `extra_gates` are run by `gate run` and counted by the DoD gate, and `guards`, plus the `rules` matching a task's `Touches`, are written into its brief.
+- **Process sized to the change.** `full`, `lite` and `quick` tracks, optional discovery, plan folded into the spec (`separate_plan: false`) and a per-skill model choice (`models`).
+- **Parallel implementers with collision control.** Tasks run in groups with disjoint `Touches:` globs. Implementers report writes outside their globs, the orchestrator compares siblings, and a collision reschedules the later task serially. With optional `worktree start|collect`, out-of-globs writes are measured from each task's actual diff and changes are applied all-or-nothing.
+- **Mechanics are scripts, not agents.** `check`, `git` and `ship` are deterministic CLI commands; the `cli-fallback` agent is dispatched only for documented failures. A git guard hook stops subagents from changing git state.
+
+Limitations: Claude Code only, no public benchmark yet, and the git guard is a guardrail rather than a security boundary. Report gaps in [issues](https://github.com/petruseugene/full-development-cycle/issues).
+
+### How it compares (as of Oct 2026)
+
+A head-to-head run of OpenSpec, BMAD, Spec Kit and Superpowers on October 13, 2026 concluded: "None of the four records a human approval anywhere code can check" ([Felipe Fontoura](https://felipefontoura.com/articles/spec-driven-development-tools-compared/)). [Martian Lee](https://martianlee.github.io/posts/2026-06-01-spec-kit-vs-superpowers) describes Spec Kit's gates as built into its document structure and Superpowers' gates as prompt rules; BMAD models the lifecycle as agent personas and OpenSpec centres on delta specs for existing codebases [4].
+
+| | dev-cycle | Superpowers | Spec Kit | BMAD | OpenSpec | GSD |
+|---|---|---|---|---|---|---|
+| Merge blocked by recorded gate state | `ship` / `git merge` DoD gate | no code-checkable approval [1] | no code-checkable approval [1] | no code-checkable approval [1] | no code-checkable approval [1] | — |
+| Built-in token and cost tracking | per agent, model, phase | — | — | — | — | — |
+| Visual test gate with a measured verdict | `visual verdict` | — | — | — | — | — |
+| Subagent per task | yes, run in parallel `Touches`-disjoint groups | fresh subagent per task [2] | — | — | — | parallel waves [5] |
+| Harnesses | Claude Code | 16, incl. Claude Code, Codex, Cursor [2] | 30+ agent integrations [3] | — | — | Claude Code, OpenCode, Gemini CLI, Codex [5] |
+
+"—" means not described in the linked sources. Only dev-cycle and Superpowers were used hands-on; the others are assessed from their documentation and the published comparisons. Sources: [1] [Fontoura, head-to-head, Oct 2026](https://felipefontoura.com/articles/spec-driven-development-tools-compared/), [2] [obra/superpowers](https://github.com/obra/superpowers), [3] [Spec Kit vs Superpowers](https://martianlee.github.io/posts/2026-06-01-spec-kit-vs-superpowers), [4] [methodologies overview](https://claude-codex.fr/en/advanced/methodologies-ecosystem/), [5] [GSD wiki (third-party Mintlify mirror of the gsd-build repo)](https://mintlify.wiki/gsd-build/get-shit-done).
+
 ## Requirements
 
 - Claude Code

@@ -3,6 +3,16 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.3] — 2026-10-23
+
+### Changed
+
+- docs(readme): add Why dev-cycle section with sourced comparison
+
+### Added
+
+- README: a "Why dev-cycle" section listing what dev-cycle adds (DoD gate before merge, measured visual verdict, measured cost, owner and content tasks, executed profile, tracks, collision control), with a dated, sourced comparison to Superpowers, Spec Kit, BMAD, OpenSpec and GSD and a short limitations line
+
 ## [1.7.2] — 2026-10-23
 
 ### Fixed
