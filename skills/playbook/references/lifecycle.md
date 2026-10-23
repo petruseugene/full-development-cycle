@@ -103,10 +103,7 @@ Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallb
   - Steps 9-13 are unchanged, except: status flips touch spec.md only; end-gate findings route to the area whose `touches` most overlap (escalate if none), with the 3-cycle limit per area.
   - Owner and content tasks are full-track only; list owner steps in the final report.
   - The orchestrator appends spec.md's `## Threat notes` section (when present) verbatim to each implementer prompt, as it does lessons.
-- **quick** (no spec.md, no plan.md):
-  - Steps 2-5 and 7-8 are skipped. Exactly one frontend-dev or backend-dev (by affected area) gets the request text verbatim as its brief.
-  - End gates are `check --scope tree-wide --record` and code-reviewer, plus any flag-enabled gates (flags inferred as in the bugfix flow, §4).
-  - The fix loop and step 13 are unchanged; the commit needs `--subject` (no spec.md to build it from).
+- **quick** (no spec.md, no plan.md): steps 2-5 and 7-8 skipped; one implementer gets the request text as its brief; gates: tree-wide `check --record`, code-reviewer, flag-enabled gates; commit needs `--subject`. Deltas:  `skills/orchestrator/references/quick.md`.
 
 Lite and quick have no brief: the orchestrator appends `lessons list --touches …` output per its dispatch rules. All three tracks produce one feature commit.
 
@@ -303,7 +300,8 @@ Each registry skill has a default `Model`: `haiku`, `sonnet`, `opus` or `inherit
 1. `feature.json.models[<skill>]`, if present and valid;
 2. code-reviewer at cycle ≥ 2 → `sonnet`;
 3. an implementer on a doc task → `haiku`; a doc task is Size `S` with every `Touches` glob markdown (ends in `.md` or starts with `docs/`);
-4. the registry default.
+4. code-reviewer on track `quick` or flow `bugfix` → `sonnet`, unless the sensitive-change check in `skills/orchestrator/references/quick.md` matches;
+5. the registry default.
 
 There is no Size-based escalation: implementers default to sonnet; opus only via an explicit `models` override. An invalid override falls through and the orchestrator emits `! MODEL: ignoring invalid override <skill>=<value>`. `brief <n>` writes `**Model:** <value> (<reason>)` (reason `override`, `doc task` or `default`) for the task's implementer.
 

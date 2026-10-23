@@ -117,6 +117,8 @@ The orchestrator first picks a **track**, proposing one with a reason (and decid
 | `lite` | Medium work | Spec as the brief, no wireframes or plan; one implementer per area |
 | `quick` | One area, a few files | A single implementer works straight from your request text |
 
+`quick` (the default) and bugfix use a lean fast path: the orchestrator reads only the playbook core and `references/quick.md`, runs one implementer, then check, review and ship. The code-reviewer runs on `sonnet` and gets your request text as its acceptance source; a change touching security-sensitive paths or words (auth, secrets, hooks, guards, telemetry) keeps the opus default. The projected cost of a clean run is about $1.35 or less, a target rather than a measurement; verify it with `node scripts/dev-cycle.mjs report --feature <folder>`.
+
 Bug reports use the **bugfix** flow: no fixed interview, the orchestrator infers what it needs, an implementer finds the root cause and fixes it, then review gates run. **Hotfix** keeps a fixed interview, branches from the latest release tag and cherry-picks the fix forward to `main`.
 
 Other commands:
@@ -257,7 +259,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 
 | Command | Purpose |
 |---|---|
-| `feature init <slug> --flow <feature\|bugfix\|hotfix> --track <full\|lite\|quick> [--answer k=v]...` | Create the feature folder and `feature.json` (`--track` is required for `feature`) |
+| `feature init <slug> --flow <feature\|bugfix\|hotfix> [--track <full\|lite\|quick>] [--answer k=v]...` | Create the feature folder and `feature.json` (`--track` defaults to `quick` for `feature`) |
 | `feature set <key> <value>` | Set a `feature.json` key such as `current_phase` |
 | `task <n> status <S>` | Set one task's status |
 | `task --all-from IMPL-DONE --to DONE` | Bulk status flip |

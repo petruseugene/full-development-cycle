@@ -3,6 +3,24 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.4] — 2026-10-23
+
+### Added
+
+- feat(orchestrator): lean fast path for quick and bugfix
+
+### Changed
+
+- orchestrator: track `quick` and flow `bugfix` take a lean fast path. Required reading is the playbook core plus the new `skills/orchestrator/references/quick.md`; `lifecycle.md` section 1a points to it instead of listing quick steps. Hotfix and escalated runs keep the full Required reading
+- model resolution: the code-reviewer on track `quick` or flow `bugfix` resolves to `sonnet`, except when the sensitive-change check (changed paths or request words such as auth, secret, hook, git-guard) matches on cycle 1, which keeps the opus default and prints a `> MODEL:` line. `feature.json.models` still wins
+- code-reviewer: on quick/bugfix the request text in the dispatch prompt is the acceptance source
+- README: corrected the `--track` note for `feature init` and described the fast path. The projected clean quick run is about $1.35 or less (a target; check with `report --feature`)
+
+### Added
+
+- `skills/orchestrator/references/quick.md`: self-contained rulebook for the quick track and bugfix flow, with explicit model choice per dispatch and a "Verify cost" note
+- `scripts/test/quick-path.test.mjs`: pins the fast-path rulebook, the sensitive-change globs and the model-rule ordering
+
 ## [1.7.3] — 2026-10-23
 
 ### Changed
