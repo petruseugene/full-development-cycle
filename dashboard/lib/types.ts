@@ -46,6 +46,9 @@ export interface Task {
   files?: string[];
   acceptance?: string;
   steps?: string[];
+  stepItems?: { text: string; done: boolean }[];
+  /** Untruncated prose (inline markdown kept) for the task modal. */
+  fullDescription?: string;
   reviewCycles?: number;
   blockerReason?: string;
   activeAgents?: AgentName[];
@@ -152,6 +155,8 @@ export interface Feature {
   reviews: ReviewVerdict[];
   testReport: TestReport | null;
   hasSpec: boolean;
+  /** Definitions from spec.md for the ids referenced by this feature's tasks. */
+  specIds?: Record<string, { text: string; done?: boolean }>;
   hasDiscovery: boolean;
   hasWireframes: boolean;
   hasPlan: boolean;
@@ -171,7 +176,13 @@ export interface KPIs {
   tasksInFlight: number;
   blocked: number;
   avgCycleHours: number | null;
-  agentSpend: { dollars: number; tokens: number; budget: number };
+  agentSpend: {
+    dollars: number;
+    tokens: number;
+    budget: number;
+    featureCount?: number;
+    costPerKtok?: number;
+  };
   trends: {
     activeFeatures: number[];
     blocked: number[];

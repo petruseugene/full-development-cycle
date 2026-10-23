@@ -2,6 +2,7 @@
 
 import type { Feature, Task, TaskStatus } from '@/lib/types';
 import { AgentBadge } from './AgentBadge';
+import { cleanExcerpt } from '@/lib/excerpt';
 
 const ACCENT: Record<TaskStatus, string> = {
   TODO: 'accent-todo',
@@ -33,6 +34,7 @@ export function TaskCard({
   const accent = ACCENT[task.status];
   const steps = STEPS_DONE[task.status];
   const blocked = task.status === 'BLOCKED';
+  const excerpt = cleanExcerpt(task.description);
 
   return (
     <article
@@ -50,9 +52,7 @@ export function TaskCard({
         </div>
       </div>
       <h4 className="text-[14px] font-semibold text-ink-900 mt-1.5 leading-snug">{task.title}</h4>
-      {task.description && (
-        <p className="text-[12.5px] text-ink-500 mt-1 leading-relaxed line-clamp-2">{task.description}</p>
-      )}
+      {excerpt && <p className="text-[12.5px] text-ink-500 mt-1 leading-relaxed line-clamp-2">{excerpt}</p>}
       <div className="step-bar mt-3">
         {steps.map((s, i) => (
           <span key={i} className={s} />

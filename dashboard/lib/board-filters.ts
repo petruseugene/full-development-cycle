@@ -45,6 +45,22 @@ export function applyFilters(features: Feature[], filters: Filters): Feature[] {
   });
 }
 
+/**
+ * Features the board actually shows for `filters` (output of applyFilters).
+ * With no filter that is every feature; with a task-level filter (status/tag/flag), features left
+ * without tasks are dropped so KPIs cover the same set as the visible cards;
+ * with only a feature selection, the selected features are kept as-is.
+ */
+export function featuresInScope(filtered: Feature[], filters: Filters): Feature[] {
+  if (activeFilterCount(filters) === 0) return filtered;
+  const taskLevel =
+    filters.statuses.length > 0 || filters.tags.length > 0 || (filters.flags ?? []).length > 0;
+  if (taskLevel) return filtered.filter((f) => f.tasks.length > 0);
+  // Feature selection only: keep exactly the selected features, including
+  // task-less (quick/lite) ones that have no plan tasks to show.
+  return filtered.filter((f) => filters.featureIds.includes(f.id));
+}
+
 // ---------------------------------------------------------------------------
 // Group: re-bucketing the board by status / feature / tag / agent.
 // ---------------------------------------------------------------------------
@@ -83,6 +99,14 @@ const TAG_COLUMNS: { key: TaskTag; label: string }[] = [
   { key: 'mixed', label: 'Mixed' },
   { key: 'infra', label: 'Infra' },
 ];
+
+/**
+ * Status board only: an empty column collapses to a compact header + count so
+ * populated columns get the width. Other groupings already hide empty buckets.
+ */
+export function isCollapsedColumn(groupKey: GroupKey, col: Pick<Column, 'items'>): boolean {
+  return groupKey === 'status' && col.items.length === 0;
+}
 
 export function bucketBoard(
   features: Feature[],

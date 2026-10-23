@@ -96,6 +96,10 @@ Other commands:
 - `/dev-cycle:dashboard` - start the dashboard for the current project.
 - `/dev-cycle:report` - generate the static HTML report (`report --all`) and print `.dev-cycle/report/index.html`.
 
+While it runs, the orchestrator renders a progress dashboard in the terminal between phases:
+
+![Orchestrator console dashboard: progress bar, per-subagent and per-model tables](https://raw.githubusercontent.com/petruseugene/full-development-cycle/main/docs/assets/orchestrator-console.png)
+
 ### Artifacts in your project
 
 - `docs/features/<YYYY-MM-DD-HHh-MMm>-<slug>/`: `feature.json`, `discovery.md`, `spec.md`, `plan.md`, `review.md`, briefs and reports.
@@ -265,6 +269,10 @@ It is a guardrail against accidents, not a security boundary: it uses a hand-wri
 ## Dashboard
 
 `/dev-cycle:dashboard` starts a local Next.js dashboard (http://127.0.0.1:3737) that watches `docs/features/` of the current project: a task board, per-feature detail, token and model spend, and an agent chat drawer. Install its dependencies once with `npm install` inside `dashboard/`. The sidebar has a "Report" link to the generated HTML report (see `/dev-cycle:report`). See `dashboard/README.md` for details.
+
+![Dashboard board filtered to completed features: KPI strip, status columns and merged tasks](https://raw.githubusercontent.com/petruseugene/full-development-cycle/main/docs/assets/dashboard-board.png)
+
+![Single-feature view with the spend-by-model table above the merged tasks](https://raw.githubusercontent.com/petruseugene/full-development-cycle/main/docs/assets/dashboard-feature.png)
 
 Chat is billed at Anthropic API rates (Claude Agent SDK). Control it with `DASHBOARD_AGENT=auto|on|off`: in `auto` (the default) chat is hidden without a valid `ANTHROPIC_API_KEY`, and every `/api/agent/**` route returns 404. Force it with `/dev-cycle:dashboard --agent=on`, `--agent=off` or `--no-agent`, or set `DASHBOARD_AGENT` in `dashboard/.env.local`. Restart the dashboard after changing the env, the flag or the key. `on` skips the key check, so a Claude Code login can be used.
 

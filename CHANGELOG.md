@@ -3,6 +3,21 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [Unreleased]
+
+### Fixed
+
+- dashboard: task modal no longer splits Files / Acceptance inside parentheses, brackets or backticks (`AC2 (R1, R2, R3)` stays one item); files show as a monospace path plus a muted note with inline code rendered, acceptance bullets and multi-line blocks parse correctly, and the description shows in full with the task's Steps as a checkbox list; acceptance ids (`AC1`, `R1`, including ids inside parentheses) are resolved to their full text from the feature's `spec.md`, with checkbox state
+- dashboard: the top bar showed the mock-up project `acme/agentic-shipper`; it now shows the real `owner/repo` from the project's git `origin` (credentials stripped), falling back to the project folder name
+- dashboard: the KPI strip now follows the board filters (it covers the same features the board shows); tasks of closed features (`current_phase: done`) no longer count as in flight or blocked and show as Merged
+- dashboard: the Agent spend card shows its token total from the same source as Spend by model, and compares spend to the per-feature budget only when one feature is in scope (otherwise it shows feature count and average)
+- dashboard: task cards show a clean plain-text excerpt taken from the first real description paragraph (markdown and the Tag / Touches / Depends on / Size fields stripped, cut on a word boundary); token totals switch to M above 1000k
+- dashboard: all status columns sit in one horizontally scrollable row and empty columns collapse to a compact header
+
+### Added
+
+- README: screenshots of the web dashboard and of the orchestrator console dashboard
+
 ## [1.7.1] — 2026-10-20
 
 ### Fixed

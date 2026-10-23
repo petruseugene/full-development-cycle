@@ -34,7 +34,7 @@ describe('measured spend (AC31)', () => {
   });
 
   it('legacy features keep the flat rate and tolerate missing totals', () => {
-    const legacy = feat({ history: [history[0]], totals: { by_subagent: { a: { calls: 1, approved: 0, retried: 0, time_s: 1, tokens_k: 10 } } } });
+    const legacy = feat({ history: [{ ...history[0], tokens_k: undefined }], totals: { by_subagent: { a: { calls: 1, approved: 0, retried: 0, time_s: 1, tokens_k: 10 } } } });
     const none = feat({ history: [] });
     const k = buildKPIs([legacy, none]);
     expect(k.agentSpend.tokens).toBe(10000);

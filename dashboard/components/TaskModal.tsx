@@ -4,6 +4,9 @@ import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { useSnapshot } from '@/lib/snapshot-context';
 import type { Feature, Task } from '@/lib/types';
+import { parseAcceptanceItems, parseFileItem } from '@/lib/task-fields';
+import { parseAcceptanceRef, type SpecId } from '@/lib/spec-ids';
+import { InlineMd } from './InlineMd';
 
 // Per spec §4.9 (R45–R50) + wireframes/task-modal.html. Refactored from the
 // legacy right-rail TaskDrawer into a centered modal so the right rail is
@@ -195,10 +198,17 @@ function Body({
   const reviews = feature.reviews.filter((r) => r.taskId === task.id);
   const featureSlug = feature.slug;
   const agentLabel = agentLabelForTag(task.tag);
-  const touches = task.files ?? [];
+  const fileItems = (task.files ?? []).map(parseFileItem);
+  const touches = fileItems.map((f) => f.path);
   const cycleCount = task.reviewCycles ?? 0;
-  const description = task.description?.trim() ?? '';
-  const acceptanceItems = parseAcceptance(task.acceptance);
+  const acceptanceItems = parseAcceptanceItems(task.acceptance);
+  const stepItems = task.stepItems ?? [];
+  // Finished tasks show every step / criterion as complete, whatever the
+  // `[ ]` still says in plan.md / spec.md.
+  const allDone = task.status === 'DONE';
+  // The card excerpt falls back to the first step when a task has no prose;
+  // the modal lists the steps itself, so don't repeat a truncated copy.
+  const description = (task.fullDescription ?? (stepItems.length ? '' : task.description ?? '')).trim();
 
   const onViewOnDisk = useCallback(() => {
     // Best-effort: open the feature folder in the user's editor via the
@@ -293,25 +303,12 @@ function Body({
         </dl>
 
         {/* Four sections per AC41: Description, Acceptance, Related files, History */}
-        <section className="mt-5">
-          <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Description</h3>
-          {description ? (
-            <p className="text-[13px] text-ink-700 leading-relaxed whitespace-pre-wrap">
-              {description}
-            </p>
-          ) : (
-            <p className="text-[12.5px] text-ink-500">No description provided.</p>
-          )}
-        </section>
+        <TaskDescription description={description} steps={stepItems} allDone={allDone} />
 
         <section className="mt-5">
           <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Acceptance</h3>
           {acceptanceItems.length > 0 ? (
-            <ul className="list-disc pl-5 text-[13px] text-ink-700 space-y-1">
-              {acceptanceItems.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
+            <AcceptanceList items={acceptanceItems} specIds={feature.specIds} allDone={allDone} />
           ) : (
             <p className="text-[12.5px] text-ink-500">No acceptance criteria listed.</p>
           )}
@@ -321,8 +318,8 @@ function Body({
           <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Related files</h3>
           {touches.length > 0 ? (
             <ul className="list-none p-0 m-0 flex flex-col gap-1">
-              {touches.map((p, i) => (
-                <li key={i}>
+              {fileItems.map(({ path: p, note }, i) => (
+                <li key={i} className="flex flex-wrap items-baseline gap-x-2">
                   {/* AC42: vscode://file/<abs-path> with monospace + wavy underline. */}
                   <a
                     className="mono text-[12.5px] text-ink-800"
@@ -331,6 +328,11 @@ function Body({
                   >
                     {p}
                   </a>
+                  {note ? (
+                    <span className="text-[12px] text-ink-500">
+                      <InlineMd text={note} />
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -437,20 +439,111 @@ function agentLabelForTag(tag: Task['tag']): string {
   }
 }
 
-function parseAcceptance(acceptance: string | undefined): string[] {
-  if (!acceptance) return [];
-  const trimmed = acceptance.trim();
-  if (!trimmed) return [];
-  // If the field looks like a comma/space-separated list of AC tokens
-  // (e.g. "AC9, AC38, AC39"), split tokens; otherwise treat as free text
-  // with each newline a bullet.
-  if (/^AC\d/.test(trimmed)) {
-    return trimmed
-      .split(/[,\s]+/)
-      .map((t) => t.trim())
-      .filter(Boolean);
+export function TaskDescription({
+  description,
+  steps,
+  allDone,
+}: {
+  description: string;
+  steps: { text: string; done: boolean }[];
+  allDone?: boolean;
+}) {
+  if (!description && steps.length === 0) {
+    return (
+      <section className="mt-5">
+        <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Description</h3>
+        <p className="text-[12.5px] text-ink-500">No description provided.</p>
+      </section>
+    );
   }
-  return trimmed.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  return (
+    <>
+      {description ? (
+        <section className="mt-5">
+          <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Description</h3>
+          <p className="text-[13px] text-ink-700 leading-relaxed whitespace-pre-wrap">
+            <InlineMd text={description} />
+          </p>
+        </section>
+      ) : null}
+      {steps.length > 0 ? (
+        <section className="mt-5">
+          <h3 className="text-[13px] font-semibold text-ink-900 mb-1.5">Steps</h3>
+          <ul className="list-none p-0 m-0 flex flex-col gap-1 text-[13px] text-ink-700">
+            {steps.map((st, i) => {
+              const done = allDone || st.done;
+              return (
+                <li key={i} className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={done}
+                    readOnly
+                    disabled
+                    aria-label={done ? 'done' : 'not done'}
+                    className="mt-1"
+                  />
+                  <span className={done ? 'text-ink-500' : ''}>
+                    <InlineMd text={st.text} />
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
+export function AcceptanceList({
+  items,
+  specIds,
+  allDone,
+}: {
+  items: string[];
+  specIds?: Record<string, SpecId>;
+  allDone?: boolean;
+}) {
+  return (
+    <ul className="list-none p-0 m-0 text-[13px] text-ink-700 space-y-2">
+      {items.map((item, i) => {
+        const ref = parseAcceptanceRef(item);
+        if (!ref) {
+          return (
+            <li key={i} className="flex gap-2">
+              <span aria-hidden="true">•</span>
+              <span><InlineMd text={item} /></span>
+            </li>
+          );
+        }
+        const def = specIds?.[ref.id];
+        return (
+          <li key={i}>
+            <div className="flex items-start gap-2">
+              {allDone || def?.done !== undefined ? (
+                <input type="checkbox" checked={allDone || !!def?.done} readOnly disabled aria-label={allDone || def?.done ? 'done' : 'not done'} className="mt-1" />
+              ) : null}
+              <span>
+                <span className="mono text-[11.5px] font-semibold text-ink-900">{ref.id}</span>
+                {def ? <> — <InlineMd text={def.text} /></> : null}
+                {ref.rest ? <> <InlineMd text={ref.rest} /></> : null}
+              </span>
+            </div>
+            {ref.refs.length > 0 ? (
+              <ul className="list-none m-0 mt-1 ml-5 pl-3 border-l border-line space-y-1 text-[12.5px] text-ink-500">
+                {ref.refs.map((r) => (
+                  <li key={r}>
+                    <span className="mono text-[11px] font-semibold text-ink-700">{r}</span>
+                    {specIds?.[r] ? <> — <InlineMd text={specIds[r].text} /></> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 function formatTime(iso: string): string {

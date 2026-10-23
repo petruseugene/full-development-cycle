@@ -4,17 +4,27 @@ import OrchestratorPill from './OrchestratorPill';
 import PendingApprovalsPill from './PendingApprovalsPill';
 import { useSnapshot } from '@/lib/snapshot-context';
 
-export function TopBar({ onSearch, onNew }: { onSearch: () => void; onNew: () => void }) {
+export function TopBar({
+  onSearch,
+  onNew,
+  projectLabel = '',
+}: {
+  onSearch: () => void;
+  onNew: () => void;
+  projectLabel?: string;
+}) {
   const { agentEnabled } = useSnapshot();
   return (
     <header className="h-12 flex items-center px-4 hair bg-white sticky top-0 z-30">
-      <div className="flex items-center gap-2.5 w-[232px] pr-3">
+      <div className="flex items-center gap-2.5 w-[232px] pr-2">
         <div className="w-6 h-6 rounded-[7px] bg-primary text-white grid place-items-center mono text-[11px] font-semibold">
           DC
         </div>
-        <div className="leading-tight">
+        <div className="leading-tight min-w-0">
           <div className="text-[13px] font-semibold text-ink-900">Dev Cycle</div>
-          <div className="mono text-[10px] text-ink-500">acme/agentic-shipper</div>
+          <div className="mono text-[10px] text-ink-500 truncate" title={projectLabel}>
+            {projectLabel}
+          </div>
         </div>
       </div>
 
