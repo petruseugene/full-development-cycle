@@ -1,6 +1,9 @@
 // Definition-of-Done gate: required-gate set + pass rule
 // (skills/orchestrator/references/dod-gate.md, spec R12).
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { hasOpenDecisions } from './decisions.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { isOwnerTask, parsePlan, tasksSource } from './plan.mjs';
 
@@ -82,6 +85,11 @@ export function evaluateDod(dir) {
   const required = requiredGates(fj, tasks, owners.map((t) => t.n));
   if (full && fj.separate_plan === false && tasks.length === 0) {
     return { passed: false, required, failed: { gate: 'tasks', status: 'MISSING' } };
+  }
+  if (fj.flow === 'feature' && (fj.track || 'full') !== 'quick') {
+    let spec = null;
+    try { spec = fs.readFileSync(path.join(dir, 'spec.md'), 'utf8'); } catch (err) { if (err?.code !== 'ENOENT') throw err; }
+    if (spec !== null && hasOpenDecisions(spec)) return { passed: false, required, failed: { gate: 'decisions', status: 'OPEN' } };
   }
   for (const gate of required) {
     // owner.task gates come from the tasks source status, never history.

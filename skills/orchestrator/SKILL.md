@@ -32,17 +32,17 @@ fi
 node "$CLI" <command> [args] [--json] --feature <abs feature dir>
 ```
 
-Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature (`current_phase: done`) for `check`, `recipe`, `gate` writes. Put the CLI path in every dispatch prompt (`State CLI: node <abs path>`). Exit `0` OK/PASSED, `1` FAILED, `2` usage error (fix the call). Node ≥ 22.
+Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature (`current_phase: done`) for `check`, `recipe`, `gate` writes. Put `State CLI: node <abs path>` in every dispatch prompt. Exit `0` OK/PASSED, `1` FAILED, `2` usage error (fix the call). Node ≥ 22.
 
 | Command | Use |
 |---|---|
 | `init [--preset web\|expo] [--force]` | write `.dev-cycle/project.json` from `package.json` script names (runs nothing); exit 1 if it exists without `--force` |
 | `profile show --json` / `profile validate` | read / check the profile (`exists: false` = none) |
-| `feature init <slug> --flow <f> [--track <t>] [--answer k=v]...` | create the folder + `feature.json`, print the path. `--track` defaults to `quick` (prints `track: quick (default)`). Precedence `--answer` > profile > track defaults; the profile is snapshotted into `feature.json.profile` |
+| `feature init <slug> --flow <f> [--track <t>] [--answer k=v]...` | create the folder + `feature.json`, print the path. `--track` defaults to `quick`. Precedence `--answer` > profile > track defaults; the profile is snapshotted into `feature.json.profile` |
 | `feature set <key> <value>` | one key (JSON-parsed if it parses, else string); allowlist in `lifecycle.md` (State CLI section): `current_phase`, `current_task_idx`, `task_count`, `branch`, `status`, `areas`, `models`, `design_source`, `owner_blocking`; others exit 2 |
 | `groups --json [--all]` | runnable parallel groups from the tasks file (plan.md, or spec.md `## Tasks` when `separate_plan=false`) |
 | `brief <n>` | write `briefs/task-<n>.md` (full track; has `**Model:**`, lessons, threat notes, recipe) |
-| `task <n> status <S>` · `task --all-from IMPL-DONE --to DONE` · `spec status <S>` | status flips (`TODO`, `IN PROGRESS`, `IMPL-DONE`, `IN REVIEW`, `BLOCKED`, `DONE`) |
+| `task <n> status <S>` · `task --all-from IMPL-DONE --to DONE` · `spec status <S>` · `spec decisions [--json]` (read-only) | status flips (`TODO`, `IN PROGRESS`, `IMPL-DONE`, `IN REVIEW`, `BLOCKED`, `DONE`) |
 | `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--agent-id <id>] [--summary s] [--concerns c]` | append an entry (`--help` lists phases); `--agent-id` reads measured tokens from the transcript (`--tokens` is the fallback); `totals` are recomputed |
 | `check [--scope touched\|tree-wide] [--files a,b]... [--steps lint,typecheck,format,test] [--record]` | lint / typecheck / format (/ test) without an agent. Exit `0` PASSED, `1` FAILED, `2` no commands. Test output is quiet: failing tests only, classified touched vs elsewhere; a non-zero test run is never PASSED. `--record` writes the `static-check` entry; a FAILED tree-wide run writes `static-check-report.md` |
 | `review snapshot [--cycle n]` · `review diff [--since-cycle n] [--name-only]` | snapshot the tree before a reviewer dispatch / print the incremental diff (exit 2 with no snapshot) |
@@ -56,7 +56,7 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
 | `worktree start\|collect\|remove --all\|list` | opt-in isolation: `references/worktrees.md` |
 | `visual …` · `report --feature <f>` | visual-tester CLI (`visual teardown` below) / render the report index and print its path |
 
-`dev-cycle:cli-fallback` (replacing static-checker and git-agent) is dispatched only for the failures named below. A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git from subagents (a guardrail, not a security boundary).
+`dev-cycle:cli-fallback` (replacing static-checker and git-agent) is dispatched only for the failures named below. A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git from subagents.
 
 ## The job
 
@@ -70,7 +70,7 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
 
    **Profile defaults.** Questions the profile answers are not asked; show them as `> defaults (project profile): platform=web, auto_tests=true, … OK?` and treat any correction as an answer. An invalid profile exits `2`: surface it.
 
-   Then `feature init <slug> --flow <flow> [--track <t>] --answer <key>=<value>`, one `--answer` for **every** interview value you decided (asked, inferred or corrected; omit only profile/track defaults). Slug kebab-case, ≤40 chars. User model overrides: `feature set models '<json>'`.
+   Then `feature init <slug> --flow <flow> [--track <t>] --answer <key>=<value>`, one `--answer` for **every** interview value you decided (asked, inferred or corrected; omit only profile/track defaults). Slug kebab-case ≤40. User model overrides: `feature set models '<json>'`.
 
 2. **Dispatch each phase** as a subagent via the `Agent` tool per `lifecycle.md` §1. Per-task phases run in parallel groups (one group at a time); end-of-feature phases run once, as one parallel fan-in, after every task is `[IMPL-DONE]`.
 
@@ -78,7 +78,7 @@ Always pass `--feature <abs feature dir>` (except `feature init` / `init` / `pro
    |---|---|---|
    | Discovery | `dev-cycle:discovery` | `discovery != "skip"` (`internal` = Internal mode only; defaults: `lifecycle.md` §5) |
    | Architecture | `dev-cycle:architector` | `overview.md` missing OR "architecturally significant" |
-   | Spec | `dev-cycle:spec-writer` | `track != "quick"` |
+   | Spec | `dev-cycle:spec-writer` | `track != "quick"`; lite/full then `references/open-decisions.md` |
    | Wireframes | `dev-cycle:wireframer` | `track == "full"` and `design_source` null |
    | Plan | `dev-cycle:plan-writer` | `track == "full"` and `separate_plan != false` (`task_count` from the tasks source) |
    | Implement | `dev-cycle:frontend-dev` / `dev-cycle:backend-dev` | per task tag (`mixed` → frontend-dev, or backend-dev when frontend-dev is in `skipped_skills`), parallel within each disjoint group |

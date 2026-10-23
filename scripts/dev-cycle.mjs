@@ -15,7 +15,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const COMMANDS = Object.freeze({
   feature: 'cmd-feature.mjs',       // feature init <slug> --flow --track [--answer k=v]...
   task: 'cmd-task.mjs',             // task <n> status <S> | task --all-from IMPL-DONE --to DONE
-  spec: 'cmd-spec.mjs',             // spec status <S>
+  spec: 'cmd-spec.mjs',             // spec status <S> | spec decisions [--json]
   history: 'cmd-history.mjs',       // history add --phase --subagent --status ...
   groups: 'cmd-groups.mjs',         // groups [--all]
   dod: 'cmd-dod.mjs',               // dod

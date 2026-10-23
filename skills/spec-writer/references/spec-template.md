@@ -38,6 +38,17 @@ flow: feature
 ## 7. Out of Scope (v1)
 - <thing deferred>
 
+<!-- Optional (see spec-writer SKILL.md "Open decisions"). Unnumbered; between section 7 and Threat notes. Option bullets: `- <label> — <consequence>` (space, em dash, space). The first option, and only it, ends its label with ` (Recommended)`. -->
+## Open decisions
+### D1: <product question>
+- <label> (Recommended) — <one-line consequence>
+- <label> — <one-line consequence>
+- <label> — <one-line consequence>
+
+<!-- Resolved form, same position; replaces `## Open decisions` once every decision is answered. <source> is `owner`, `owner: defaults OK` or `owner: other`. -->
+## Decisions
+- **D1:** <question> → <chosen label or owner text> (<source>) — <consequence>
+
 <!-- Optional, only when the threat look fires (see spec-writer SKILL.md step 5). Unnumbered, advisory, no dod gate. -->
 ## Threat notes
 - **<area>:** <risk and the guard to apply>
