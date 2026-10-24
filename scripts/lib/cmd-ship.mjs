@@ -25,7 +25,7 @@ import { evaluateDod } from './dod.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { appendHistory } from './history.mjs';
 import { currentBranch, defaultBranch } from './git-branch.mjs';
-import { commit } from './git-commit.mjs';
+import { commit, polishChangeSet } from './git-commit.mjs';
 import {
   GIT_COMMON_OPTIONS, GitFailure, execOpts, ghRun, gitOk, gitRun, outputTail,
 } from './git-exec.mjs';
@@ -102,7 +102,7 @@ function releaseStep({ ctx, root, featureDir, values, fj, notesText, messages, r
   appendHistory(featureDir, {
     phase: 'release', subagent: 'cli', executor: 'cli', status: 'DONE', summary: `${current} → ${next}`,
   });
-  return { status: 'ok', version: next };
+  return { status: 'ok', version: next, paths: [...manifests.map((m) => m.abs), changelog] };
 }
 
 /** Local and remote commit of a tag (null when absent). */
@@ -226,6 +226,8 @@ export async function run(argv, ctx) {
 
   const fj = readFeatureJson(featureDir);
   let version = lastReleased(fj);
+  let releasePaths = [];
+  const polish = (fj.flow ?? 'feature') === 'feature' && fj.track === 'polish';
 
   try {
     // 1. tokens
@@ -272,12 +274,17 @@ export async function run(argv, ctx) {
         if (err instanceof ReleaseError) throw new StepFailure('release', err.reason, err.detail);
         throw err;
       }
+      releasePaths = res.paths ?? [];
       version = res.status === 'ok' ? res.version : (lastReleased(readFeatureJson(featureDir)) ?? version);
       mark('release', res.status);
     }
 
     // 4. commit
-    if (resume || (await gitOk(['status', '--porcelain'], opts)) === '') {
+    // Polish: only the per-item change set counts (baseline untracked files and ignored bookkeeping do not).
+    const nothingToCommit = resume || (polish
+      ? (await polishChangeSet(featureDir, opts, { releasePaths })).empty
+      : (await gitOk(['status', '--porcelain'], opts)) === '');
+    if (nothingToCommit) {
       mark('commit', 'skipped');
     } else {
       const args = [];
@@ -287,7 +294,7 @@ export async function run(argv, ctx) {
       if (values.closes !== undefined) args.push('--closes', values.closes);
       for (const t of values.trailer ?? []) args.push('--trailer', t);
       if (values['gh-credential']) args.push('--gh-credential');
-      await commit([...args, '--feature', featureDir], ctx);
+      await commit([...args, '--feature', featureDir], ctx, { releasePaths });
       mark('commit', 'ok');
     }
 

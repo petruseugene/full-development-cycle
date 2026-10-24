@@ -84,7 +84,7 @@ test('AC1: no package.json with dependencies under scripts/', () => {
 
 test('command table covers every R5–R16 command and maps to cmd-<name>.mjs', () => {
   assert.deepEqual(Object.keys(COMMANDS).sort(), [
-    'brief', 'check', 'context', 'dod', 'feature', 'gate', 'git', 'groups', 'history', 'init', 'lessons', 'map', 'post-merge', 'profile', 'recipe', 'report', 'review', 'ship', 'spec', 'task', 'tokens', 'visual', 'worktree',
+    'brief', 'check', 'context', 'dod', 'feature', 'gate', 'git', 'groups', 'history', 'init', 'lessons', 'map', 'polish', 'post-merge', 'profile', 'recipe', 'report', 'review', 'ship', 'spec', 'task', 'tokens', 'visual', 'worktree',
   ]);
   for (const [name, file] of Object.entries(COMMANDS)) assert.equal(file, `cmd-${name}.mjs`);
 });

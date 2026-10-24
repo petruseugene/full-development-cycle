@@ -11,6 +11,7 @@ import { parseOpenDecisions } from './decisions.mjs';
 import { dodReport, lastStatus, specAnalyzeCounts } from './dod.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { isOwnerTask, parsePlan, tasksSource } from './plan.mjs';
+import { isDeferred, readPolish } from './polish.mjs';
 import { tokenCoverage, tokenCoverageLine } from './token-coverage.mjs';
 
 const CLI_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dev-cycle.mjs');
@@ -63,12 +64,14 @@ function nextLines({ fj, dir, report, decisions, quickish }) {
     const subject = quickish || release ? ' --subject "<subject>"' : '';
     return [`${cli} dod ${F}`, `${cli} ship ${F}${subject}${release ? ' --release auto' : ''}`];
   }
-  const gate = report.needs[0].gate;
+  let gate = report.needs[0].gate;
+  if (gate === 'items') gate = report.needs.find((x) => x.gate.startsWith('implement.area='))?.gate ?? gate;
   let out = [];
   if (gate === 'tasks' || gate === 'spec') out = ['dispatch dev-cycle:spec-writer'];
   else if (gate === 'plan') out = ['dispatch dev-cycle:plan-writer'];
   else if (gate === 'spec-analyze') out = [`${cli} spec analyze ${F}`];
   else if (gate.startsWith('implement.task=')) out = [`${cli} groups --json ${F}`, 'dispatch the ready group (references/parallel-groups.md)'];
+  else if (gate === 'items') out = [`${cli} polish list ${F}`, 'finish each open item or: polish defer <n> --reason <text>'];
   else if (gate === 'implement.area=<none>') out = [`${cli} feature set areas '<json>' ${F}`];
   else if (gate.startsWith('implement.area=')) {
     const name = gate.slice('implement.area='.length);
@@ -111,7 +114,7 @@ export function buildResume(dir) {
   const tasks = effTrack === 'full'
     ? { done: regular.length - openRegular.length, total: regular.length, open: openRegular.map((t) => ({ n: t.n, status: t.status, title: t.title })) }
     : null;
-  const areas = effTrack === 'lite'
+  const areas = effTrack === 'lite' || effTrack === 'polish'
     ? (Array.isArray(fj.areas) ? fj.areas : []).filter((a) => a?.name).map((a) => ({ name: a.name, status: lastStatus(history, `implement.area=${a.name}`) }))
     : null;
   const implement = effTrack === 'quick' ? lastStatus(history, 'implement') : null;
@@ -121,12 +124,20 @@ export function buildResume(dir) {
 
   let decisions = null;
   let specAnalyze = null;
-  if (flow === 'feature' && effTrack !== 'quick') {
+  if (flow === 'feature' && effTrack !== 'quick' && effTrack !== 'polish') {
     const spec = readSpec(dir);
     if (spec !== null) {
       decisions = decisionsState(spec);
       specAnalyze = specAnalyzeCounts(dir, spec);
     }
+  }
+  let items = null;
+  if (effTrack === 'polish') {
+    const p = readPolish(dir);
+    const list = p ? p.items : [];
+    const by = {};
+    for (const it of list) by[it.status] = (by[it.status] ?? 0) + 1;
+    items = { total: list.length, by_status: by, deferred: list.filter(isDeferred).length };
   }
   const ownerOpen = src ? owners.filter((t) => t.status !== 'DONE').map((t) => ({ n: t.n, title: t.title, status: t.status })) : null;
   const budget = budgetCheck(fj);
@@ -142,6 +153,7 @@ export function buildResume(dir) {
     status: fj.status ?? null,
     tasks,
     areas,
+    items,
     implement,
     gates,
     dod: { passed: report.passed, needs: report.needs },
@@ -169,6 +181,10 @@ export function formatResume(r) {
     else { lines.push('areas:'); for (const a of r.areas) lines.push(`  ${a.name} ${a.status}`); }
   } else if (r.implement !== null) {
     lines.push(`implement: ${r.implement}`);
+  }
+  if (r.items) {
+    const parts = Object.entries(r.items.by_status).map(([s, c]) => `${s} ${c}`);
+    lines.push(`items: ${r.items.total} (${parts.join(', ') || 'none'}) · deferred ${r.items.deferred}`);
   }
   if (r.gates.length) lines.push(`gates: ${r.gates.map((g) => `${g.gate}=${g.status}`).join(' ')}`);
   lines.push(r.dod.passed ? 'dod: PASSED' : `dod: needs ${r.dod.needs.slice(0, MAX_NEEDS).map((n) => `${n.gate}=${n.status}`).join(', ')}${r.dod.needs.length > MAX_NEEDS ? `, … +${r.dod.needs.length - MAX_NEEDS} more` : ''}`);

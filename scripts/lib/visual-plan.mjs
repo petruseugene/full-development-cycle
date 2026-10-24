@@ -4,7 +4,7 @@
 //
 // Selection source by track:
 //   full        union of the task `Touches` in plan.md / spec.md
-//   lite        feature.json.areas[].touches
+//   lite/polish feature.json.areas[].touches
 //   quick/bugfix  `git diff --name-only <default-branch>...HEAD`
 // A screen is selected when one of its `touches` globs overlaps a source
 // glob (globsOverlap). Screens without `touches` need `--all`. Flow screens
@@ -52,7 +52,7 @@ async function selectionSource(ctx, featureDir, fj, git) {
   if (fj.track === 'full') {
     const globs = planTouches(featureDir);
     if (globs.length) return { source: 'plan', globs };
-  } else if (fj.track === 'lite') {
+  } else if (fj.track === 'lite' || fj.track === 'polish') {
     const globs = areaTouches(fj);
     if (globs.length) return { source: 'areas', globs };
   }

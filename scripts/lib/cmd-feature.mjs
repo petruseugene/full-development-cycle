@@ -11,7 +11,7 @@ import { run as resume } from './resume.mjs';
 import { INTERVIEW_KEYS, PROTECTED_SKILLS, SKILL_ALIASES, aliasWarning, checkInterviewValue, isAlias, isKnownSkill, loadProfile, registrySkills } from './profile.mjs';
 
 const FLOWS = ['feature', 'bugfix', 'hotfix'];
-const TRACKS = ['full', 'lite', 'quick'];
+const TRACKS = ['full', 'lite', 'quick', 'polish'];
 const PROFILE_COPY = ['commands', 'extra_gates', 'post_merge', 'guards', 'rules', 'enabled_skills', 'recipes', 'visual'];
 const SKILL_FORCED = Object.freeze({
   discovery: ['discovery', 'skip'],
@@ -47,7 +47,7 @@ function parseAnswer(raw) {
 
 async function init(argv, ctx) {
   const { values, args } = parseCommandArgs(argv, {
-    usage: 'feature init <slug> --flow <feature|bugfix|hotfix> [--track <full|lite|quick>] (default quick) [--answer k=v]...',
+    usage: 'feature init <slug> --flow <feature|bugfix|hotfix> [--track <full|lite|quick|polish>] (default quick) [--answer k=v]...',
     options: {
       flow: { type: 'string', required: true },
       track: { type: 'string' },
@@ -113,7 +113,7 @@ async function init(argv, ctx) {
     started_at: now.toISOString(),
     sessions: ctx.env?.CLAUDE_CODE_SESSION_ID ? [ctx.env.CLAUDE_CODE_SESSION_ID] : [],
     ...merged,
-    current_phase: !isFeature || track === 'quick'
+    current_phase: !isFeature || track === 'quick' || track === 'polish'
       ? 'implement'
       : (merged.discovery !== 'skip' && track === 'full' ? 'discovery' : 'spec'),
     history: [],
@@ -140,6 +140,21 @@ const MODELS = ['haiku', 'sonnet', 'opus', 'inherit'];
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const nonNegInt = (v) => Number.isInteger(v) && v >= 0;
 
+/** `feature set areas` validator (shared with `polish init`): error string or null. */
+export function validateAreas(v) {
+  if (!Array.isArray(v)) return 'must be an array';
+  const seen = new Set();
+  for (const [i, a] of v.entries()) {
+    if (!isObj(a)) return `[${i}] must be an object`;
+    if (typeof a.name !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.name)) return `[${i}].name must be kebab-case`;
+    if (seen.has(a.name)) return `duplicate area name '${a.name}'`;
+    seen.add(a.name);
+    if (!Array.isArray(a.touches) || a.touches.length === 0
+      || !a.touches.every((t) => typeof t === 'string' && t !== '')) return `[${i}].touches must be a non-empty string[]`;
+  }
+  return null;
+}
+
 /** key → validator returning an error string or null. */
 const SETTABLE = {
   current_phase: (v) => (PHASES.includes(v) ? null : `must be one of ${PHASES.join('|')}`),
@@ -150,19 +165,7 @@ const SETTABLE = {
   tdd: (v) => (typeof v === 'boolean' ? null : 'must be a boolean'),
   status: (v) => (v === 'blocked' || v === 'active' ? null : 'must be "blocked" or "active"'),
   design_source: (v) => (v === null || typeof v === 'string' ? null : 'must be a string or null'),
-  areas(v) {
-    if (!Array.isArray(v)) return 'must be an array';
-    const seen = new Set();
-    for (const [i, a] of v.entries()) {
-      if (!isObj(a)) return `[${i}] must be an object`;
-      if (typeof a.name !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.name)) return `[${i}].name must be kebab-case`;
-      if (seen.has(a.name)) return `duplicate area name '${a.name}'`;
-      seen.add(a.name);
-      if (!Array.isArray(a.touches) || a.touches.length === 0
-        || !a.touches.every((t) => typeof t === 'string' && t !== '')) return `[${i}].touches must be a non-empty string[]`;
-    }
-    return null;
-  },
+  areas: validateAreas,
   models(v) {
     if (!isObj(v)) return 'must be an object';
     const skills = registrySkills();

@@ -109,12 +109,15 @@ export async function loadFeatures(): Promise<Feature[]> {
       fs.stat(folderPath).catch(() => null),
     ]);
     const specRaw = await readMaybe(path.join(folderPath, 'spec.md'));
+    const polishRaw = await readMaybe(path.join(folderPath, 'polish.md'));
     const discoveryRaw = await readMaybe(path.join(folderPath, 'discovery.md'));
     const wireframeFiles = await listFiles(path.join(folderPath, 'wireframes'));
 
     const meta = featureRaw ? parseFeatureJson(featureRaw) : null;
     // R41: with no plan.md, fall back to a `## Tasks` section in spec.md.
-    const taskSource = planRaw ?? (specRaw && /^## Tasks\s*$/m.test(specRaw) ? specRaw : null);
+    // Polish batches: polish.md is the task source when neither exists (read-only).
+    const taskSource =
+      planRaw ?? (specRaw && /^## Tasks\s*$/m.test(specRaw) ? specRaw : null) ?? polishRaw;
     const tasks = closeTasksOfClosedFeature(taskSource ? parsePlanMd(taskSource) : [], meta);
     const reviews = reviewRaw ? parseReviewMd(reviewRaw) : [];
     const testReport = testRaw ? parseTestReportMd(testRaw) : null;

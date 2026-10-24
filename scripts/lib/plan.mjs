@@ -1,7 +1,7 @@
 // Tolerant plan.md reader + minimal-diff status writer.
 //
 // API (pure functions over text, except tasksSource which reads files):
-//   tasksSource(dir)           -> {file, text} | null   (plan.md, else spec.md with `## Tasks`)
+//   tasksSource(dir)           -> {file, text} | null   (plan.md, else spec.md with `## Tasks`, else polish.md)
 //   hasTagToken(task, token)   -> boolean  (token among the task's tags; case-insensitive, no substring match)
 //   isOwnerTask(task)          -> boolean  (`owner` token among the task's tags)
 //   isContentTask(task)        -> boolean  (`content` token among the task's tags)
@@ -250,6 +250,9 @@ export function tasksSource(dir) {
   const specFile = path.join(dir, 'spec.md');
   const specText = read(specFile);
   if (specText !== null && /^##\s+Tasks\s*\r?$/m.test(specText)) return { file: specFile, text: specText };
+  const polishFile = path.join(dir, 'polish.md');
+  const polishText = read(polishFile);
+  if (polishText !== null) return { file: polishFile, text: polishText };
   return null;
 }
 

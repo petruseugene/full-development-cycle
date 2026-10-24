@@ -16,7 +16,7 @@
 //     2. `gh auth status`, PR mergeability (CONFLICTING → conflict);
 //     3. `gh pr checks`: fail → ci-failing; pending → poll until done or the
 //        timeout → ci-pending; none → proceed;
-//     4. `gh pr merge <branch> --squash --delete-branch`, then
+//     4. `gh pr merge <branch> --squash --delete-branch` (polish: `--rebase`), then
 //        `git checkout <default>` and `git pull --ff-only`.
 //   The poll interval is 10 s (DEV_CYCLE_CI_POLL_S overrides it; test seam).
 
@@ -30,7 +30,8 @@ import { currentBranch, defaultBranch } from './git-branch.mjs';
 import {
   GIT_COMMON_OPTIONS, GitFailure, execOpts, ghAuthPreflight, ghRun, gitOk, gitRun, outputTail,
 } from './git-exec.mjs';
-import { buildPrBody } from './git-message.mjs';
+import { buildPrBody, polishPrTitle } from './git-message.mjs';
+import { readPolish } from './polish.mjs';
 import { parsePlan, tasksSource } from './plan.mjs';
 
 export const DEFAULT_CI_TIMEOUT_S = 900;
@@ -107,7 +108,9 @@ export async function pr(argv, ctx) {
   if (existing) return { text: existing, data: { url: existing, created: false, branch } };
 
   const base = values.base ?? (await defaultBranch(opts));
-  const title = values.title ?? (await gitOk(['log', '-1', '--format=%s'], opts));
+  const polish = fj.track === 'polish' && (fj.flow ?? 'feature') === 'feature' ? readPolish(featureDir) : null;
+  const title = values.title
+    ?? (polish ? polishPrTitle({ fj, items: polish.items }) : await gitOk(['log', '-1', '--format=%s'], opts));
   const headMessage = await gitOk(['log', '-1', '--format=%B'], opts);
   const src = tasksSource(featureDir);
   const body = buildPrBody({
@@ -116,6 +119,7 @@ export async function pr(argv, ctx) {
     history: fj.history,
     headMessage,
     footer: values['body-footer'] ?? '',
+    polishItems: polish ? polish.items : null,
   });
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-cycle-pr-'));
@@ -200,6 +204,9 @@ export async function merge(argv, ctx) {
   const featureDir = resolveFeatureDir(ctx, values);
   const opts = execOpts(ctx, values);
   const branch = await currentBranch('merge', opts);
+  // Polish keeps one commit per item on the default branch: rebase, never squash (R11).
+  const fjMerge = readFeatureJson(featureDir);
+  const strategy = fjMerge.track === 'polish' && (fjMerge.flow ?? 'feature') === 'feature' ? 'rebase' : 'squash';
 
   // 1. dod is the guard: nothing reaches gh when it fails.
   const dod = evaluateDod(featureDir);
@@ -224,7 +231,7 @@ export async function merge(argv, ctx) {
   const checks = await waitForChecks(branch, timeout_s, poll_s, opts);
 
   // 4. Merge, then return to an up-to-date default branch.
-  const m = await ghRun(['pr', 'merge', branch, '--squash', '--delete-branch'], opts);
+  const m = await ghRun(['pr', 'merge', branch, `--${strategy}`, '--delete-branch'], opts);
   if (m.code !== 0) {
     const out = m.stderr || m.stdout;
     const detail = `gh pr merge: ${outputTail(out, 10) || `exit ${m.code}`}`;
@@ -241,7 +248,7 @@ export async function merge(argv, ctx) {
   }
   const url = typeof info?.url === 'string' ? info.url : undefined;
   return {
-    text: `merged ${branch} (squash${checks === 'none' ? ', no checks' : ''}); on ${def}, up to date`,
+    text: `merged ${branch} (${strategy}${checks === 'none' ? ', no checks' : ''}); on ${def}, up to date`,
     data: { branch, default: def, checks, ...(url ? { url } : {}) },
   };
 }
