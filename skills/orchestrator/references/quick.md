@@ -2,6 +2,8 @@
 
 Self-contained rulebook for track `quick` (flow `feature`, the default) and flow `bugfix`. Read only the playbook core plus this file. Hotfix, or `visual_tests` / `a11y_audit` / `security_review` / `dependency_audit` true: do the full Required reading (SKILL.md items 2–3); on a flag only, §2, §4 and §6 here still apply. Escalation to `lite` or `full`: stop using this file and do SKILL.md items 2–3. Quick flips no statuses and has no groups, briefs, owner tasks or worktrees.
 
+After compaction, run `feature resume --feature <f>` and follow its `next:` lines.
+
 ## 1. Setup
 - State CLI: resolve once (`CLI="${CLAUDE_PLUGIN_ROOT}/scripts/dev-cycle.mjs"`, else `find ~/.claude/plugins -maxdepth 6 -path '*dev-cycle*/scripts/dev-cycle.mjs'`). Always `node "$CLI" <cmd> --feature <abs feature dir>`. Exit 0 OK, 1 FAILED, 2 usage or no commands. Put `State CLI: node <abs>` in every prompt. `<root>` = recorded plugin root.
 - Track: never asked. Print `> TRACK: quick — <reason>` before any dispatch. Request spans several areas, a new screen or a new API (`lite`), or several subsystems or architecture impact (`full`): print one `> TRACK: lite|full — <reason>` line and leave this file for the full Required reading (SKILL.md items 2–3).

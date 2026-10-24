@@ -29,6 +29,7 @@ test('AC14: passes when all required gates end in pass set', () => {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /^DOD-GATE PASSED$/m);
+    assert.equal(r.stdout, 'DOD-GATE PASSED\ntokens: 0 measured / 7 estimated entries\n');
   } finally { fx.cleanup(); }
 });
 
@@ -37,7 +38,7 @@ test('AC14: DONE_WITH_CONCERNS fails with exact line; last entry wins', () => {
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: review last status = DONE_WITH_CONCERNS; aborting before push.\n');
+    assert.equal(r.stdout, '! DOD-GATE FAILED: review last status = DONE_WITH_CONCERNS; aborting before push.\ntokens: 0 measured / 8 estimated entries\n');
   } finally { fx.cleanup(); }
   const fx2 = fixture({ history: [h('review', 'CHANGES_REQUIRED'), ...happy()] });
   try { assert.equal(runCli(['dod'], { cwd: fx2.root }).status, 0); } finally { fx2.cleanup(); }
@@ -49,7 +50,7 @@ test('missing task gate fails with MISSING; first failing gate only', () => {
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: implement.task=3 last status = MISSING; aborting before push.\n');
+    assert.equal(r.stdout.split('\n')[0], '! DOD-GATE FAILED: implement.task=3 last status = MISSING; aborting before push.');
   } finally { fx.cleanup(); }
 });
 
@@ -59,7 +60,7 @@ test('AC15: extra_gates adds gate.<name> requirement', () => {
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: gate.content last status = MISSING; aborting before push.\n');
+    assert.equal(r.stdout.split('\n')[0], '! DOD-GATE FAILED: gate.content last status = MISSING; aborting before push.');
   } finally { fx.cleanup(); }
   const fx2 = fixture({ profile, history: [...happy(), h('gate.content', 'PASSED')] });
   try { assert.equal(runCli(['dod'], { cwd: fx2.root }).status, 0); } finally { fx2.cleanup(); }
@@ -86,7 +87,7 @@ test('lite with no areas fails with implement.area=<none>; quick passes; --json'
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: implement.area=<none> last status = MISSING; aborting before push.\n');
+    assert.equal(r.stdout.split('\n')[0], '! DOD-GATE FAILED: implement.area=<none> last status = MISSING; aborting before push.');
   } finally { fx.cleanup(); }
   const fx2 = mkFixture({ featureJson: sampleFeatureJson({ track: 'quick', auto_tests: false,
     history: [h('implement', 'DONE'), h('static-check', 'PASSED'), h('review', 'APPROVED')] }) });
@@ -140,7 +141,7 @@ test('AC37: separate_plan false with no ## Tasks fails with gate tasks MISSING',
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: tasks last status = MISSING; aborting before push.\n');
+    assert.equal(r.stdout.split('\n')[0], '! DOD-GATE FAILED: tasks last status = MISSING; aborting before push.');
   } finally { fx.cleanup(); }
 });
 
@@ -155,7 +156,7 @@ test('AC37: separate_plan absent still requires plan (legacy)', () => {
   try {
     const r = runCli(['dod'], { cwd: fx.root });
     assert.equal(r.status, 1);
-    assert.equal(r.stdout, '! DOD-GATE FAILED: plan last status = MISSING; aborting before push.\n');
+    assert.equal(r.stdout.split('\n')[0], '! DOD-GATE FAILED: plan last status = MISSING; aborting before push.');
   } finally { fx.cleanup(); }
 });
 

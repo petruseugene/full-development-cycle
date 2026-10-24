@@ -30,6 +30,7 @@ import {
   GIT_COMMON_OPTIONS, GitFailure, execOpts, ghRun, gitOk, gitRun, outputTail,
 } from './git-exec.mjs';
 import { merge, pr, push } from './git-remote.mjs';
+import { tokenCoverage, tokenCoverageLine } from './token-coverage.mjs';
 import { run as tokensRun } from './cmd-tokens.mjs';
 import {
   LEVELS, ReleaseError, VERSION_RE, agreedVersion, bumpVersion, inferLevel, insertChangelog,
@@ -207,9 +208,10 @@ export async function run(argv, ctx) {
     steps.push({ step, status });
     if (!json) ctx.stdout.write(`ship: ${step} ${status}\n`);
   };
+  let tokensInfo = null;
   const fail = (line, extra) => {
     ctx.stderr.write(`${line}\n`);
-    if (json) ctx.stdout.write(`${JSON.stringify({ ok: false, steps, ...extra })}\n`);
+    if (json) ctx.stdout.write(`${JSON.stringify({ ok: false, steps, ...(tokensInfo ? { tokens: tokensInfo } : {}), ...extra })}\n`);
     return 1;
   };
 
@@ -247,10 +249,15 @@ export async function run(argv, ctx) {
       mark('dod', 'skipped');
     } else {
       const dod = evaluateDod(featureDir);
+      const hist = readFeatureJson(featureDir).history;
+      tokensInfo = tokenCoverage(hist);
+      const tline = tokenCoverageLine(hist);
       if (!dod.passed) {
+        if (!json) ctx.stdout.write(`${tline}\n`);
         return fail(`! DOD-GATE FAILED: ${dod.failed.gate} last status = ${dod.failed.status}; aborting before push.`, { reason: 'dod-failed', failed: dod.failed });
       }
       mark('dod', 'ok');
+      if (!json) ctx.stdout.write(`${tline}\n`);
     }
 
     // 3. release
@@ -340,6 +347,6 @@ export async function run(argv, ctx) {
     throw err;
   }
 
-  if (json) output(ctx, values, { data: { ok: true, steps, ...(version ? { version } : {}) } });
+  if (json) output(ctx, values, { data: { ok: true, steps, ...(tokensInfo ? { tokens: tokensInfo } : {}), ...(version ? { version } : {}) } });
   return 0;
 }

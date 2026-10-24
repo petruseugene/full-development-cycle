@@ -156,7 +156,7 @@ The interview sets flags that enable optional phases: `auto_tests`, `visual_test
 
 ## Project profile
 
-Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `recipes`, `visual`, `worktrees`.
+Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `recipes`, `visual`, `worktrees`, `strict_tokens`.
 
 ```json
 {
@@ -193,6 +193,13 @@ Optional file `.dev-cycle/project.json` in the target project. Validate it with 
 ```
 
 Notes: `commands` accepts `lint`, `typecheck`, `test` and `format`; a command may contain an unquoted `{files}` placeholder for touched-scope runs. `interview_defaults` accepts `has_ui`, `platform`, `has_backend`, `architecturally_significant`, `design_source`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `tdd`, `discovery` and `separate_plan`. Gate and post-merge names match `[a-z0-9-]+`; post-merge steps with `confirm: true` never run without `--confirmed`. Some skills are always enabled regardless of `enabled_skills` (playbook, orchestrator, using-dev-cycle, spec-writer, frontend-dev, backend-dev, code-reviewer, cli-fallback). `profile validate` prints "protected skill '...' is always enabled" warnings for protected skills left out of `enabled_skills`; they are expected and harmless. Claude Code cannot disable individual plugin skills, so `enabled_skills` only stops dispatch; it does not reduce prompt size.
+
+### `profile.strict_tokens`
+Optional boolean, default `false`. When `true`, `history add` for a dispatched subagent without `--agent-id` exits 2 instead of only warning, so token accounting stays measured.
+
+```json
+{ "strict_tokens": true }
+```
 
 ### `profile.worktrees`
 Optional worktree isolation for parallel task groups. Keys: `mode` (`off` default, `audit`, `auto`), `min_group` (integer >= 2, default 3), `dir` (repo-relative, default `.dev-cycle/worktrees`), `link` (globs symlinked into each worktree, default `**/node_modules`), `copy` (globs copied, default `.env`, `.env.*`) and `setup` (a command run inside each new worktree). `dir`, `link` and `copy` must be relative and contain no `..` segment. With `worktrees.mode` set to `audit`, groups still run in the shared tree and the CLI only records what isolation would have changed; `auto` runs eligible groups in isolated worktrees and merges them back with `worktree collect`. Expo and React Native projects usually want `"link": []` plus a `setup` command such as `npm ci`, because linked native dependency folders are not safe to share:
@@ -265,6 +272,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 |---|---|
 | `feature init <slug> --flow <feature\|bugfix\|hotfix> [--track <full\|lite\|quick>] [--answer k=v]...` | Create the feature folder and `feature.json` (`--track` defaults to `quick` for `feature`) |
 | `feature set <key> <value>` | Set a `feature.json` key such as `current_phase` |
+| `feature resume [--json]` | Read-only: rebuild the working context after compaction (tasks or areas, gates, what `dod` still needs, open decisions, budget) and print the exact `next:` commands |
 | `task <n> status <S>` | Set one task's status |
 | `task --all-from IMPL-DONE --to DONE` | Bulk status flip |
 | `spec status <S>` | Rewrite the status in `spec.md` frontmatter |
@@ -272,7 +280,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `spec amend --supersede AC<x>=AC<y>[,AC<z>] [--json]` | Mark AC<x> as `**[superseded → AC<y>]**`; all pairs validated before one write |
 | `spec analyze [--json]` | Read-only: report spec, task and coverage inconsistencies (errors exit 1, warnings exit 0) |
 | `spec decisions [--json]` | Read-only: list the `## Open decisions` of `spec.md` (exit 2 on a malformed block) |
-| `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]` | Append a history entry; measured usage is attached when an agent id is given |
+| `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]` | Append a history entry; measured usage is attached when an agent id is given; a dispatched subagent without `--agent-id` prints a `no --agent-id` warning (exit 2 under `strict_tokens`) |
 | `groups [--all]` | Compute parallel groups from `Touches` and `Depends on` |
 | `brief <n>` | Write `briefs/task-<n>.md` |
 | `check [--scope touched\|tree-wide] [--files a,b] [--steps lint,typecheck,format,test] [--record] [--tail n] [--timeout s]` | Run read-only lint, typecheck, format and test commands. Test output is quiet: only failures are extracted and split into touched files versus elsewhere, and a non-zero test run is never reported as PASSED |

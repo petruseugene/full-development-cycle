@@ -72,16 +72,61 @@ export function lastStatus(history, gate) {
   return status;
 }
 
-/** True when `spec analyze` would report errors. Read-only; a malformed input counts as an error. */
-function specAnalyzeFails(dir, specText) {
+/**
+ * `spec analyze` counts for a feature folder. Read-only; a malformed input
+ * (UsageError) is reported as `malformed` and counts as failing.
+ * @returns {{errors: number, warnings: number, malformed: boolean}}
+ */
+export function specAnalyzeCounts(dir, specText) {
   const read = (f) => { try { return fs.readFileSync(path.join(dir, f), 'utf8'); } catch (err) { if (err?.code === 'ENOENT') return null; throw err; } };
   try {
     const r = analyzeSpec({ specText, tasksText: tasksSource(dir)?.text ?? null, reportText: read('test-report.md') });
-    return r.errors.length > 0;
+    return { errors: r.errors.length, warnings: r.warnings.length, malformed: false };
   } catch (err) {
-    if (err instanceof UsageError) return true;
+    if (err instanceof UsageError) return { errors: 0, warnings: 0, malformed: true };
     throw err;
   }
+}
+
+/**
+ * Full gate report: preconditions dod evaluates (tasks, decisions,
+ * spec-analyze) followed by every required gate. `needs` is the non-passing
+ * subset in the same order, so `needs[0]` is the gate dod fails on.
+ * @param {string} dir
+ * @returns {{passed: boolean, required: string[], checks: {gate: string, status: string, pass: boolean}[],
+ *   needs: {gate: string, status: string}[], failed?: {gate: string, status: string}}}
+ */
+export function dodReport(dir) {
+  const fj = readFeatureJson(dir);
+  const full = !isQuickFlow(fj) && (fj.track || 'full') === 'full';
+  const tasks = full ? taskNumbers(tasksSource(dir)?.text ?? null) : [];
+  const parsed = full && fj.owner_blocking === true ? parsePlan(tasksSource(dir)?.text ?? '') : [];
+  const owners = parsed.filter(isOwnerTask);
+  const ownerStatus = new Map(owners.map((t) => [`owner.task=${t.n}`, t.status]));
+  const required = requiredGates(fj, tasks, owners.map((t) => t.n));
+  const checks = [];
+  const add = (gate, status, pass) => checks.push({ gate, status, pass });
+  if (full && fj.separate_plan === false) {
+    add('tasks', tasks.length === 0 ? 'MISSING' : 'OK', tasks.length > 0);
+  }
+  if (fj.flow === 'feature' && (fj.track || 'full') !== 'quick') {
+    let spec = null;
+    try { spec = fs.readFileSync(path.join(dir, 'spec.md'), 'utf8'); } catch (err) { if (err?.code !== 'ENOENT') throw err; }
+    if (spec !== null) {
+      const open = hasOpenDecisions(spec);
+      add('decisions', open ? 'OPEN' : 'OK', !open);
+      const c = specAnalyzeCounts(dir, spec);
+      const fails = c.errors > 0 || c.malformed;
+      add('spec-analyze', fails ? 'ERRORS' : 'OK', !fails);
+    }
+  }
+  for (const gate of required) {
+    // owner.task gates come from the tasks source status, never history.
+    const status = ownerStatus.has(gate) ? ownerStatus.get(gate) : lastStatus(fj.history, gate);
+    add(gate, status, PASS_SET.has(status));
+  }
+  const needs = checks.filter((c) => !c.pass).map(({ gate, status }) => ({ gate, status }));
+  return { passed: needs.length === 0, required, checks, needs, ...(needs.length ? { failed: needs[0] } : {}) };
 }
 
 /**
@@ -90,26 +135,6 @@ function specAnalyzeFails(dir, specText) {
  * @returns {{passed: boolean, required: string[], failed?: {gate: string, status: string}}}
  */
 export function evaluateDod(dir) {
-  const fj = readFeatureJson(dir);
-  const full = !isQuickFlow(fj) && (fj.track || 'full') === 'full';
-  const tasks = full ? taskNumbers(tasksSource(dir)?.text ?? null) : [];
-  const parsed = full && fj.owner_blocking === true ? parsePlan(tasksSource(dir)?.text ?? '') : [];
-  const owners = parsed.filter(isOwnerTask);
-  const ownerStatus = new Map(owners.map((t) => [`owner.task=${t.n}`, t.status]));
-  const required = requiredGates(fj, tasks, owners.map((t) => t.n));
-  if (full && fj.separate_plan === false && tasks.length === 0) {
-    return { passed: false, required, failed: { gate: 'tasks', status: 'MISSING' } };
-  }
-  if (fj.flow === 'feature' && (fj.track || 'full') !== 'quick') {
-    let spec = null;
-    try { spec = fs.readFileSync(path.join(dir, 'spec.md'), 'utf8'); } catch (err) { if (err?.code !== 'ENOENT') throw err; }
-    if (spec !== null && hasOpenDecisions(spec)) return { passed: false, required, failed: { gate: 'decisions', status: 'OPEN' } };
-    if (spec !== null && specAnalyzeFails(dir, spec)) return { passed: false, required, failed: { gate: 'spec-analyze', status: 'ERRORS' } };
-  }
-  for (const gate of required) {
-    // owner.task gates come from the tasks source status, never history.
-    const status = ownerStatus.has(gate) ? ownerStatus.get(gate) : lastStatus(fj.history, gate);
-    if (!PASS_SET.has(status)) return { passed: false, required, failed: { gate, status } };
-  }
-  return { passed: true, required };
+  const { passed, required, failed } = dodReport(dir);
+  return passed ? { passed, required } : { passed, required, failed };
 }

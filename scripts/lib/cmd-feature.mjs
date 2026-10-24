@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { UsageError, featuresRoot, output, parseCommandArgs, resolveFeatureDir, warn } from './core.mjs';
 import { updateFeatureJson, writeFeatureJson } from './feature-json.mjs';
+import { run as resume } from './resume.mjs';
 import { INTERVIEW_KEYS, PROTECTED_SKILLS, SKILL_ALIASES, aliasWarning, checkInterviewValue, isAlias, isKnownSkill, loadProfile, registrySkills } from './profile.mjs';
 
 const FLOWS = ['feature', 'bugfix', 'hotfix'];
@@ -217,5 +218,6 @@ export async function run(argv, ctx) {
   const [sub, ...rest] = argv;
   if (sub === 'init') return init(rest, ctx);
   if (sub === 'set') return set(rest, ctx);
-  throw new UsageError(`unknown feature subcommand '${sub ?? ''}' (usage: dev-cycle feature init|set ...)`);
+  if (sub === 'resume') return resume(rest, ctx);
+  throw new UsageError(`unknown feature subcommand '${sub ?? ''}' (usage: dev-cycle feature init|set|resume ...)`);
 }
