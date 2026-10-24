@@ -3,6 +3,22 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.8] — 2026-10-24
+
+### Added
+
+- feat(cli): feature resume after compaction; warn on missing --agent-id
+
+### Added
+
+- `feature resume [--json]`: read-only command that rebuilds the orchestrator's context after compaction (tasks or areas, gates, `dod` needs, decisions, budget) and prints the exact `next:` commands (#23); the SessionStart hook hints at it on `compact` and `resume`
+- `strict_tokens` profile key: `history add` for a dispatched subagent without `--agent-id` exits 2
+- `dod` and `ship` print a `tokens: <m> measured / <e> estimated entries` line
+
+### Fixed
+
+- `history add` now warns with `no --agent-id` when a dispatched subagent is recorded without it, instead of silently falling back to a self-estimate (#9)
+
 ## [1.7.7] — 2026-10-24
 
 ### Added

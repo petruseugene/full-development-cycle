@@ -16,13 +16,13 @@ NOT for: quick one-liner edits, pure research / Q&A, step-by-step pair-coding.
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` (the playbook core) first; `${CLAUDE_PLUGIN_ROOT}` is the plugin root on the `Plugin root:` line below.
    **Fast path:** flow `bugfix`, or flow `feature` on track `quick` (not escalated, no explicit lite/full; `visual_tests`, `a11y_audit`, `security_review`, `dependency_audit` all false): read only item 1 and `references/quick.md`. Hotfix, escalation: full Required reading.
 2. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/references/lifecycle.md` (§1, §1a, Bugfix flow, §1c, §4, §5, §7, §9, §10). "Playbook §1/§1a/§4/§5/§7/§9/§10" here and in the references mean this file; §2/§3/§6/§8 mean the core.
-3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `worktrees.md` (`worktrees.mode != off`), `release.md` (`ship --release`), `recipes.md` (profile recipes)
+3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `worktrees.md` (`worktrees.mode != off`), `release.md` (`ship --release`), `recipes.md` (profile recipes), `resume.md` (after compaction: `feature resume`)
 
 Plugin root: `${CLAUDE_PLUGIN_ROOT}` — record this absolute value once at run start and use it as `<root>` in every dispatch prompt (subagent Reads don't expand it).
 
 ## State CLI
 
-Every state change goes through the state CLI; never hand-edit `feature.json`, `plan.md` or `spec.md`. Resolve it **once** per session and reuse the absolute path (shell state does not persist):
+Every state change goes through the state CLI; never hand-edit `feature.json`, `plan.md` or `spec.md`. Resolve it **once** per session and reuse the absolute path:
 
 ```bash
 CLI="${CLAUDE_PLUGIN_ROOT}/scripts/dev-cycle.mjs"
@@ -32,7 +32,7 @@ fi
 node "$CLI" <command> [args] [--json] --feature <abs feature dir>
 ```
 
-Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature (`current_phase: done`) for `check`, `recipe`, `gate` writes. Put `State CLI: node <abs path>` in every dispatch prompt. Exit `0` OK/PASSED, `1` FAILED, `2` usage error (fix the call). Node ≥ 22.
+Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature for `check`, `recipe`, `gate` writes. Put `State CLI: node <abs path>` in every dispatch prompt. Exit `0` OK/PASSED, `1` FAILED, `2` usage error (fix the call). Node ≥ 22.
 
 | Command | Use |
 |---|---|
@@ -96,7 +96,7 @@ Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); 
 
    **Visual tests teardown (mandatory fallback).** When the Visual tests gate returns (any status, even interrupted) and `verification/teardown.json` is missing or older than the manifest's `last_activity`, run `node <CLI> visual teardown --feature <f>` before routing. It stops only recorded devices and verified process groups, never the Playwright browser.
 
-   **Report.** After each end-gate round run `node <CLI> report --feature <f>` and print the path. Profile command logs (`gates/`, `post-merge/`, `content/`) are committed: warn if one might print secrets.
+   **Report.** After each end-gate round run `report --feature <f>` and print the path. Profile command logs (`gates/`, `post-merge/`, `content/`) are committed: warn if one might print secrets.
 
    **Ship.** After dod run `ship` (replaces commit → push → pr → merge). With `release_manage == true` pass `--release auto` unless the user named a level, notes per `references/release.md`. `dev-cycle:cli-fallback` (git mode) only for `conflict`, `not-mergeable`, `push-rejected`, `hook-failed` needing a code fix (implementer fix loop first) and the hotfix cherry-pick; other reasons go to the user in one line (`lifecycle.md` §7).
 
@@ -128,7 +128,7 @@ Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); 
    - **`NEEDS_CONTEXT` in a group:** let the group finish, then re-dispatch that task **serially next iteration** with the context.
    - **Only-failed-gates re-run** after a fix cycle (dod reads the last status per gate).
 
-5. **Statuses** only through the CLI (`task <n> status "<S>"`, `spec status <S>`); the IMPL-DONE→DONE and spec DONE flips happen inside the feature commit. Task rules are for `full`; `lite` flips spec.md only, `quick` nothing.
+5. **Statuses** only through the CLI (`task <n> status "<S>"`, `spec status <S>`); the IMPL-DONE→DONE and spec DONE flips happen inside the feature commit. Task rules are `full` only; `lite` flips spec.md, `quick` nothing.
    - Implementer `DONE` → `[IMPL-DONE]`, **not** `[DONE]` (reserved for the feature commit). Fix-cycle findings → `[IN REVIEW]` while the implementer re-runs, then back to `[IMPL-DONE]`; `[IN PROGRESS]` while one runs; `[BLOCKED]` on 3-cycle exhaustion or unresolvable collision.
    - A pre-task phase reporting `BLOCKED`: `feature set status blocked` and escalate; `feature set status active` on resume.
 

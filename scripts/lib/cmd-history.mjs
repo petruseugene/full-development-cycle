@@ -3,6 +3,8 @@
 import { UsageError, output, parseCommandArgs, resolveFeatureDir, warn } from './core.mjs';
 import { agentTimeRange, agentUsage, configRoot, normIso, validateAgentId, validateSessionId } from './tokens.mjs';
 import { estimateUsd } from './prices.mjs';
+import { loadProfile } from './profile.mjs';
+import { NO_AGENT_ID_MESSAGE, isDispatchedEntry } from './token-coverage.mjs';
 import { appendHistory, isValidPhase, parseDuration, parseTokens } from './history.mjs';
 
 const USAGE = 'history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]';
@@ -37,6 +39,17 @@ export async function run(argv, ctx) {
   if (values.concerns !== undefined) entry.concerns = values.concerns;
 
   const agentId = values['agent-id'];
+  const missingAgentId = agentId === undefined && isDispatchedEntry(entry);
+  if (missingAgentId) {
+    let strict = false;
+    try { strict = loadProfile(ctx, { quiet: true }).profile?.strict_tokens === true; } catch (e) {
+      if (!(e instanceof UsageError)) throw e; // a broken profile means strict_tokens = false
+    }
+    if (strict) {
+      throw new UsageError(`${NO_AGENT_ID_MESSAGE} (strict_tokens)`);
+    }
+    warn(ctx, NO_AGENT_ID_MESSAGE);
+  }
   if (agentId !== undefined) {
     validateAgentId(agentId);
     const sid = values.session ?? ctx.env?.CLAUDE_CODE_SESSION_ID;

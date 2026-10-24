@@ -58,7 +58,7 @@ const PROTECTED_WARNING_RE = /^protected skill '/;
 export const DISCOVERY_VALUES = Object.freeze(['full', 'internal', 'skip']);
 export const PROFILE_KEYS = Object.freeze([
   'platform', 'interview_defaults', 'commands', 'extra_gates', 'post_merge',
-  'enabled_skills', 'guards', 'rules', 'recipes', 'visual', 'worktrees',
+  'enabled_skills', 'guards', 'rules', 'recipes', 'visual', 'worktrees', 'strict_tokens',
 ]);
 export const MAX_TIMEOUT_S = 86400;
 const NAME_RE = /^[a-z0-9-]+$/;
@@ -203,6 +203,9 @@ export function validateProfile(profile, { skills = registrySkills() } = {}) {
 
   for (const k of Object.keys(profile)) {
     if (!PROFILE_KEYS.includes(k)) warnings.push(`unknown top-level key '${k}' in ${PROFILE_REL}`);
+  }
+  if ('strict_tokens' in profile && typeof profile.strict_tokens !== 'boolean') {
+    errors.push('strict_tokens must be a boolean');
   }
   if ('platform' in profile && !PLATFORMS.includes(profile.platform)) {
     errors.push(`platform must be one of ${PLATFORMS.join('|')}`);

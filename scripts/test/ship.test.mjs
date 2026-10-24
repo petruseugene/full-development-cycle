@@ -16,6 +16,8 @@ const PASSING = [
   { phase: 'static-check', status: 'PASSED' }, { phase: 'review', status: 'APPROVED' },
   { phase: 'auto-test', status: 'PASSED' }, { phase: 'security', status: 'APPROVED' },
 ];
+const T7 = 'tokens: 0 measured / 7 estimated entries';
+const T6 = 'tokens: 0 measured / 6 estimated entries';
 const SHA_RE = /^[0-9a-f]{40}$/;
 
 /** Repo on feat/sample with manifests, a CHANGELOG, a code commit and a gh stub. */
@@ -50,7 +52,7 @@ async function ship(repo, gh, argv, env = {}) {
   } finally { rec.restore(); }
 }
 
-const lines = (out) => out.split('\n').filter((l) => l.startsWith('ship: '));
+const lines = (out) => out.split('\n').filter((l) => l.startsWith('ship: ') || l.startsWith('tokens: '));
 const readFile = (repo, rel) => fs.readFileSync(path.join(repo.root, rel), 'utf8');
 const mergeRule = (sha) => ({ match: 'pr view feat/sample --json mergeCommit', stdout: JSON.stringify({ mergeCommit: { oid: sha } }) });
 
@@ -65,7 +67,7 @@ test('AC26: ship --release minor bumps manifests, changelog, opens/merges the PR
     const r = await ship(repo, gh, ['--release', 'minor', '--notes-file', notes, '--subject', 'feat(x): y']);
     assert.equal(r.code, 0, r.err);
     assert.deepEqual(lines(r.out), [
-      'ship: tokens skipped', 'ship: dod ok', 'ship: release ok', 'ship: commit ok',
+      'ship: tokens skipped', 'ship: dod ok', T7, 'ship: release ok', 'ship: commit ok',
       'ship: push ok', 'ship: pr ok', 'ship: merge ok', 'ship: tag ok',
     ]);
     // the feature commit carries both manifests and the changelog
@@ -136,7 +138,7 @@ test('AC27: subject bullet sections, auto levels, mismatch, no-manifest, app.jso
     assert.equal(r.code, 1);
     assert.match(r.err, /ship release: FAILED version-mismatch/);
     assert.equal(repo.git(['status', '--porcelain']).includes('package.json'), false);
-    assert.deepEqual(lines(r.out), ['ship: tokens skipped', 'ship: dod ok']);
+    assert.deepEqual(lines(r.out), ['ship: tokens skipped', 'ship: dod ok', T7]);
   } finally { repo.cleanup(); }
 
   // no manifest
@@ -169,7 +171,7 @@ test('AC28: resume after a push failure, third run all skipped, tag-exists on an
     const r1 = await ship(repo, gh, args);
     assert.equal(r1.code, 1);
     assert.match(r1.err, /git push: FAILED (?:hook-failed|push-rejected) — /);
-    assert.deepEqual(lines(r1.out), ['ship: tokens skipped', 'ship: dod ok', 'ship: release ok', 'ship: commit ok']);
+    assert.deepEqual(lines(r1.out), ['ship: tokens skipped', 'ship: dod ok', T7, 'ship: release ok', 'ship: commit ok']);
     assert.equal(gh.calls().filter((c) => c.argv[0] === 'pr' && c.argv[1] !== 'list').length, 0);
     assert.throws(() => repo.git(['rev-parse', '--verify', '-q', 'v1.5.0']));
 
@@ -177,7 +179,7 @@ test('AC28: resume after a push failure, third run all skipped, tag-exists on an
     const r2 = await ship(repo, gh, args);
     assert.equal(r2.code, 0, r2.err);
     assert.deepEqual(lines(r2.out), [
-      'ship: tokens skipped', 'ship: dod ok', 'ship: release skipped', 'ship: commit skipped',
+      'ship: tokens skipped', 'ship: dod ok', T7, 'ship: release skipped', 'ship: commit skipped',
       'ship: push ok', 'ship: pr ok', 'ship: merge ok', 'ship: tag ok',
     ]);
     // one release bump only
@@ -219,7 +221,7 @@ test('AC29: ship without --release leaves manifests and changelog alone and crea
     const r = await ship(repo, gh, ['--subject', 'feat(x): y']);
     assert.equal(r.code, 0, r.err);
     assert.deepEqual(lines(r.out), [
-      'ship: tokens skipped', 'ship: dod ok', 'ship: release skipped', 'ship: commit ok',
+      'ship: tokens skipped', 'ship: dod ok', T7, 'ship: release skipped', 'ship: commit ok',
       'ship: push ok', 'ship: pr ok', 'ship: merge ok', 'ship: tag skipped',
     ]);
     assert.match(repo.git(['show', 'feat/sample:package.json']), /"version": "1.4.0"/);
@@ -236,7 +238,7 @@ test('AC29: ship without --release leaves manifests and changelog alone and crea
     assert.match(r.err, /! DOD-GATE FAILED: review last status = MISSING/);
     assert.equal(repo.git(['rev-parse', 'HEAD']), headBefore);
     assert.equal(readFile(repo, 'package.json').includes('1.4.0'), true);
-    assert.deepEqual(lines(r.out), ['ship: tokens skipped']);
+    assert.deepEqual(lines(r.out), ['ship: tokens skipped', T6]);
     assert.equal(gh.calls().length, 0);
   } finally { repo.cleanup(); }
 });
@@ -327,5 +329,19 @@ test('#43: --release prefixes a non-conventional subject with feat/fix and (--sc
     assert.equal(r.code, 0, r.err);
     assert.equal(repo.git(['log', '-1', '--format=%s', 'feat/sample']), 'feat(scripts): add widget');
     assert.ok(repo.git(['show', 'feat/sample:CHANGELOG.md']).includes('### Added\n\n- feat(scripts): add widget'));
+  } finally { repo.cleanup(); }
+});
+
+test('AC8: ship --json carries tokens when dod ran, success or failure', T, async () => {
+  let { repo, gh } = mkRepo();
+  try {
+    const r = await ship(repo, gh, ['--json', '--subject', 'feat: z']);
+    assert.deepEqual(JSON.parse(r.out.trim().split('\n').pop()).tokens, { measured: 0, estimated: 7 });
+  } finally { repo.cleanup(); }
+  ({ repo, gh } = mkRepo({ history: PASSING.filter((h) => h.phase !== 'review') }));
+  try {
+    const r = await ship(repo, gh, ['--json', '--subject', 'feat: z']);
+    assert.equal(r.code, 1);
+    assert.deepEqual(JSON.parse(r.out.trim().split('\n').pop()).tokens, { measured: 0, estimated: 6 });
   } finally { repo.cleanup(); }
 });
