@@ -105,7 +105,7 @@ Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallb
   - The orchestrator appends spec.md's `## Threat notes` section (when present) verbatim to each implementer prompt, as it does lessons.
 - **quick** (no spec.md, no plan.md): steps 2-5 and 7-8 skipped; one implementer gets the request text as its brief; gates: tree-wide `check --record`, code-reviewer, flag-enabled gates; commit needs `--subject`. Deltas:  `skills/orchestrator/references/quick.md`.
 
-Lite and quick have no brief: the orchestrator appends `lessons list --touches …` output per its dispatch rules. All three tracks produce one feature commit.
+Lite and quick have no brief: the orchestrator appends `context --touches …` output per its dispatch rules. All three tracks produce one feature commit.
 
 ### Bugfix flow
 

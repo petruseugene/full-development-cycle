@@ -34,7 +34,7 @@ test('AC9/AC13/AC17b: lite fixture lists areas, gates and lessons next line', ()
     assert.ok(l[0].startsWith(`feature: ${path.basename(fx.featureDir)} · flow feature · track lite · phase `), l[0]);
     assert.ok(l.includes('areas:') && l.includes('  api MISSING') && l.includes('  ui DONE'));
     assert.ok(l.includes('gates: spec=DONE static-check=MISSING review=MISSING auto-test=MISSING'));
-    assert.ok(l.some((x) => x.startsWith(`  node ${CLI_PATH} lessons list --touches "src/api/**,a/b.js"`) && x.includes(`--feature ${fx.featureDir}`)));
+    assert.ok(l.some((x) => x.startsWith(`  node ${CLI_PATH} context --touches "src/api/**,a/b.js"`) && x.includes(`--feature ${fx.featureDir}`)));
     assert.ok(l.includes('  dispatch implementer: Area api'));
   } finally { fx.cleanup(); }
 });
@@ -43,7 +43,7 @@ test('AC17b: unsafe touches omit the lessons line', () => {
   const fx = lite({ areas: [{ name: 'api', touches: ['a"; rm -rf'] }], history: [h('spec', 'DONE')] });
   try {
     const out = resume(fx).stdout;
-    assert.ok(!out.includes('lessons list'));
+    assert.ok(!out.includes('lessons list') && !out.includes('context --touches'));
     assert.ok(out.includes('dispatch implementer: Area api'));
   } finally { fx.cleanup(); }
 });

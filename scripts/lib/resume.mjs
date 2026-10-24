@@ -74,7 +74,7 @@ function nextLines({ fj, dir, report, decisions, quickish }) {
     const name = gate.slice('implement.area='.length);
     const area = (Array.isArray(fj.areas) ? fj.areas : []).find((a) => a?.name === name);
     const touches = Array.isArray(area?.touches) ? area.touches.filter((t) => typeof t === 'string') : [];
-    if (touches.length && !touches.some((t) => UNSAFE_TOUCH.test(t))) out.push(`${cli} lessons list --touches "${touches.join(',')}" ${F}`);
+    if (touches.length && !touches.some((t) => UNSAFE_TOUCH.test(t))) out.push(`${cli} context --touches "${touches.join(',')}" ${F}`);
     out.push(`dispatch implementer: Area ${name}`);
   } else if (gate === 'implement') out = ['dispatch implementer (references/quick.md §2)'];
   else if (gate.startsWith('owner.task=')) {

@@ -115,7 +115,7 @@ Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); 
    - Absolute feature folder, State CLI path, the reminder to end with the YAML report (playbook core §6), and the resolved model of any nested skill it may dispatch.
    - **Full-track implementers:** run `brief <n>` before each dispatch (re-dispatches too); pass `<feature>/briefs/task-<n>.md` as the primary input plus `auto_tests`, `platform`, `design_source`, `has_ui`, not `feature.json` or a tasks slice. With a `**Wireframes:**` field add a `Wireframes (binding contract):` header listing every path absolute under the feature folder, plus: "Open every listed wireframe before writing code; the page must match each wireframe's visible structure column-for-column / element-for-element. Any AC anchored to one of these files is binding — a missing column is a review failure."
    - **Lite (quick: `references/quick.md`):** current `feature.json`, `Area: <name>`, `Touches: <globs>`, the spec.md AC ids the area owns.
-   - **Lessons (lite and quick only; no brief).** Before each dispatch run `lessons list --touches "<globs>"` (lite: the area's `touches`) and, only when non-empty, append the output verbatim (no second `Lessons (advisory):` header). Briefs carry `## Lessons`.
+   - **Lessons (lite and quick only; no brief).** Before each dispatch run `context --touches "<globs>"` (lite: the area's `touches`) and, only when non-empty, append the output verbatim (no second `Lessons (advisory):` header). Briefs carry `## Lessons` and `## Project map`.
    - **Threat notes (lite).** When spec.md has `## Threat notes`, append that section verbatim to the implementer prompt, as with lessons. Briefs copy it; reviewers read it.
    - All other subagents: the current `feature.json`.
 

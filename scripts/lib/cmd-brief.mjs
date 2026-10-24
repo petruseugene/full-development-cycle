@@ -7,6 +7,7 @@ import { readFeatureJson } from './feature-json.mjs';
 import { findTask, parsePlan, requireTasksSource } from './plan.mjs';
 import { buildBrief } from './brief.mjs';
 import { LESSONS_REL, parseLessons } from './lessons.mjs';
+import { readMapText } from './map.mjs';
 
 export async function run(argv, ctx) {
   const { values, args } = parseCommandArgs(argv, { usage: 'brief <n> [--json] [--feature <dir>]', positionals: ['n'] });
@@ -26,7 +27,7 @@ export async function run(argv, ctx) {
 
   const lessonsText = readText(path.join(resolveProjectRoot(ctx), LESSONS_REL), { optional: true });
   const lessons = parseLessons(lessonsText ?? '').lessons;
-  const text = buildBrief({ task, specText, fj, lessons });
+  const text = buildBrief({ task, specText, fj, lessons, map: readMapText(resolveProjectRoot(ctx)) });
   const file = path.join(dir, 'briefs', `task-${n}.md`);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   atomicWrite(file, text);

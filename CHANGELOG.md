@@ -3,6 +3,17 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.9] — 2026-10-24
+
+### Added
+
+- feat(cli): codebase map and context --touches for prompts
+
+### Added
+
+- `map [--check] [--force] [--json]`: deterministic committed `.dev-cycle/map.md` (packages, script names, entry points, test runners, key dirs) from tracked files; discovery maintains `## Notes` (#25)
+- `context --touches <globs>`: the lessons block plus a map slice of at most 2 KB for lite and quick prompts; briefs get `## Project map`
+
 ## [1.7.8] — 2026-10-24
 
 ### Added

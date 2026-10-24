@@ -4,8 +4,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { UsageError, featuresRoot, output, parseCommandArgs, resolveFeatureDir, warn } from './core.mjs';
+import { UsageError, featuresRoot, output, parseCommandArgs, resolveFeatureDir, resolveProjectRoot, warn } from './core.mjs';
 import { updateFeatureJson, writeFeatureJson } from './feature-json.mjs';
+import { MAP_REL, refreshMap } from './map.mjs';
 import { run as resume } from './resume.mjs';
 import { INTERVIEW_KEYS, PROTECTED_SKILLS, SKILL_ALIASES, aliasWarning, checkInterviewValue, isAlias, isKnownSkill, loadProfile, registrySkills } from './profile.mjs';
 
@@ -125,6 +126,11 @@ async function init(argv, ctx) {
     fj.profile = copy;
   }
   writeFeatureJson(dir, fj);
+  try {
+    const { status } = await refreshMap(resolveProjectRoot(ctx), { env: ctx.env });
+    if (status === 'created' || status === 'updated') ctx.stderr.write(`map: ${status} ${MAP_REL}\n`);
+    else if (status === 'invalid' || status === 'too-large') ctx.stderr.write(`! MAP: ${status} \u2014 run dev-cycle map\n`);
+  } catch { /* the map is optional; never fail feature init */ }
   output(ctx, values, { text: dir, data: { path: dir, feature: fj } });
   return 0;
 }
