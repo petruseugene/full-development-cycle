@@ -44,7 +44,7 @@ This rule overrides any temptation to summarise the wireframe into prose and ski
 
 ## The job
 
-1. **Detect stack** from `package.json` (React, Vue, Svelte, vanilla, Next.js, Vite, etc.). Note the framework + UI library + state tool + styling approach.
+1. **Detect stack**: start from the `Project map` section of the brief or prompt when present, then confirm against `package.json` only as needed (React, Vue, Svelte, vanilla, Next.js, Vite, etc.). Note the framework + UI library + state tool + styling approach.
    If `expo` is a dependency in `package.json`, it is Expo / React Native: if `expo:*` skills are available, invoke `expo:expo-overview` first, then read the "React Native + Expo (Expo Router)" section of `references/stack-notes.md` and the "React Native" section of `references/pitfalls.md`.
 2. **Open every wireframe in the binding contract above.** This is step zero of any frontend task — non-negotiable when wireframes are listed.
 3. **Re-read existing patterns** — find an existing component of similar shape and follow its conventions (file location, naming, styling, test placement). Do not invent new patterns.

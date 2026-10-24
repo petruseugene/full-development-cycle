@@ -62,6 +62,7 @@ A head-to-head run of OpenSpec, BMAD, Spec Kit and Superpowers on October 13, 20
 
 - **Hooks (local only):** `SessionStart` runs `scripts/session-start.sh` (injects a routing primer). `PreToolUse` on Bash runs `scripts/git-guard.mjs` (denies state-changing git from subagents).
 - **State CLI:** `scripts/dev-cycle.mjs` runs `git` and, for `ship` and `git push|pr|merge`, the GitHub CLI `gh` with your own GitHub auth (pushes branches, opens and merges PRs, creates tags). The optional `--gh-credential` flag makes git use `gh` as its credential helper.
+- **Codebase map:** `map` runs `git ls-files` / `git rev-parse` locally, reads only tracked `package.json` / `pnpm-workspace.yaml`, and has no network access.
 - **Project profile commands:** `commands`, `extra_gates`, `post_merge` and `recipes` run only commands the project owner wrote in `.dev-cycle/project.json`. Post-merge steps with `confirm: true` need explicit confirmation.
 - **Skills:** may run your project's test and lint tools, Playwright or simulators for visual tests, and `npx -y @axe-core/cli@4.13.0` for accessibility audits (downloads that pinned version from npm).
 - **Dashboard (optional, local on 127.0.0.1:3737):** installs its npm dependencies automatically on first start. It calls `api.anthropic.com` (a `GET /v1/models` key check and Claude Agent SDK sessions) only when `DASHBOARD_AGENT` is not `off` and a key is set (auto mode validates the key with `GET /v1/models`), and reads `ANTHROPIC_API_KEY` from the environment or `dashboard/.env.local` for that. `ANTHROPIC_BASE_URL` overrides the host. The dashboard page loads web fonts from `fonts.googleapis.com` / `fonts.gstatic.com` in your browser.
@@ -140,6 +141,8 @@ While it runs, the orchestrator renders a progress dashboard in the terminal bet
 - `docs/workflows/`: process and agent-stack diagrams.
 - `docs/features/<f>/verification/`: visual-test gallery (`index.html`), written by `visual gallery`; self-ignored.
 - `.dev-cycle/report/`: the generated HTML report (`index.html`); self-ignored.
+
+**Codebase map.** `.dev-cycle/map.md` is a committed, deterministic overview of packages, script names, entry points, test runners and key directories, built from tracked files only; discovery maintains its `## Notes` section. It refreshes only at `feature init`, at discovery and on a manual `map`, and writes only when the content changes. It supplements CLAUDE.md and does not replace it. Briefs and lite/quick prompts get a slice of at most 2 KB for the paths a task touches. To measure the effect, compare the discovery and implementer token medians in `report --all` for features before and after the map. Examples: `node scripts/dev-cycle.mjs map --check`, `node scripts/dev-cycle.mjs context --touches "apps/web/**"`.
 
 Task statuses: `[TODO]` → `[IN PROGRESS]` → `[IMPL-DONE]` → `[IN REVIEW]` → `[DONE]`, or `[BLOCKED]` at any step.
 
@@ -282,6 +285,8 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `spec decisions [--json]` | Read-only: list the `## Open decisions` of `spec.md` (exit 2 on a malformed block) |
 | `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]` | Append a history entry; measured usage is attached when an agent id is given; a dispatched subagent without `--agent-id` prints a `no --agent-id` warning (exit 2 under `strict_tokens`) |
 | `groups [--all]` | Compute parallel groups from `Touches` and `Depends on` |
+| `map [--check] [--force] [--json]` | Write or refresh the committed `.dev-cycle/map.md` from tracked files (`--check` is read-only; exit 1 when stale) |
+| `context [--touches g,..] [--json]` | Read-only: print the lessons block for the globs plus the project-map slice (at most 2 KB) for a lite or quick prompt |
 | `brief <n>` | Write `briefs/task-<n>.md` |
 | `check [--scope touched\|tree-wide] [--files a,b] [--steps lint,typecheck,format,test] [--record] [--tail n] [--timeout s]` | Run read-only lint, typecheck, format and test commands. Test output is quiet: only failures are extracted and split into touched files versus elsewhere, and a non-zero test run is never reported as PASSED |
 | `gate run <name>\|--all` | Run `extra_gates`; see the gate source rule below |

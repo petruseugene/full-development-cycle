@@ -33,7 +33,7 @@ export const GH_TIMEOUT_S = 120;
 
 const NETWORK_SUBCOMMANDS = new Set(['fetch', 'push', 'pull']);
 const CREDENTIAL_PREFIX = Object.freeze(['-c', 'credential.helper=', '-c', 'credential.helper=!gh auth git-credential']);
-const OUTPUT_CAP = 4 * 1024 * 1024;
+export const OUTPUT_CAP = 4 * 1024 * 1024;
 const CLOSE_GRACE_MS = 2000;
 
 /** A FAILED git verb outcome with a reason from GIT_REASONS (exit 1). */

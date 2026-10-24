@@ -9,6 +9,7 @@ import { UsageError } from './core.mjs';
 import { globsOverlap } from './glob-overlap.mjs';
 import { filterByTouches, sanitizeText, sortNewest } from './lessons.mjs';
 import { isContentTask } from './plan.mjs';
+import { sliceMap } from './map.mjs';
 import { SKILL_ALIASES, isAlias } from './profile.mjs';
 import { parseAcIds, parseSpecAcs, resolveAc } from './spec-acs.mjs';
 
@@ -120,7 +121,7 @@ function tddSection(task, specText, fj) {
   return sec;
 }
 
-export function buildBrief({ task, specText, fj, lessons = [] }) {
+export function buildBrief({ task, specText, fj, lessons = [], map = null }) {
   const out = [];
   out.push(`# Brief: Task ${task.n}${task.title ? ` — ${task.title}` : ''}`, '');
 
@@ -181,6 +182,9 @@ export function buildBrief({ task, specText, fj, lessons = [] }) {
     .filter((r) => Array.isArray(r?.globs) && r.globs.some((g) => task.touches.some((t) => globsOverlap(g, t))));
   const items = [...guards.map((g) => `- ${g}`), ...rules.map((r) => `- ${r.text}`)];
   out.push(...(items.length ? items : ['(none)']), '');
+
+  const slice = sliceMap(map, task.touches);
+  if (slice) out.push('## Project map', '', slice.replace(/\n+$/, ''), '');
 
   if (isContentTask(task)) {
     const recipes = Array.isArray(profile.recipes) ? profile.recipes : [];

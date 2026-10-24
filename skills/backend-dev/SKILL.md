@@ -33,7 +33,7 @@ Get your `Touches:` globs by track. Full: from `briefs/task-<n>.md` (Touches, De
 
 ## The job
 
-1. **Detect stack** from manifest files. Note framework + ORM/DB driver + auth approach + test runner.
+1. **Detect stack**: start from the `Project map` section of the brief or prompt when present, then confirm against manifest files only as needed. Note framework + ORM/DB driver + auth approach + test runner.
    Also probe `supabase/config.toml`: if it exists, the stack is Supabase — read the Supabase section of `references/stack-notes.md`.
 2. **Re-read existing patterns** — find a similar handler/service/job and follow its conventions (file location, naming, error handling, test placement).
 3. **Write code + tests together** when `feature.json.auto_tests == true` (tests first when `tdd` is true, see TDD mode). Tests colocated per project convention.

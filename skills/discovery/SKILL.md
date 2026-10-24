@@ -21,7 +21,7 @@ disable-model-invocation: true
 
 1. Read the orchestrator's prompt to determine **mode**:
    - **External**: research libraries, patterns, prior art (use WebSearch, context7, WebFetch)
-   - **Internal**: explore the codebase (use Glob, Grep, Read)
+   - **Internal**: run `node <State CLI> map` first and read `.dev-cycle/map.md` before searching, then explore the codebase (use Glob, Grep, Read). At the end add or correct at most 10 lines under `## Notes` in that file, each in exactly this shape (glob in backticks, then a space, an em dash — not a hyphen, a space, the fact; lines in any other shape are ignored and never reach prompts): ``- `apps/api/**` — uses Fastify; tests via vitest`` (single line, up to 240 chars; durable orientation facts the generated part cannot show: conventions, legacy dirs, cross-package flow). Never edit above `## Notes`; never paste secrets or script bodies.
    - **Both**: do both, separated under H2 sections
 
 2. Produce `discovery.md` in the feature folder. Sections:

@@ -17,7 +17,7 @@ test('AC1: quick.md exists, fits the byte budget and carries the required litera
   for (const k of [
     'check --scope tree-wide --record', 'review snapshot', 'review diff --since-cycle', 'history add',
     '--agent-id', 'report --feature', 'dod', '! DOD-GATE FAILED:', 'ship --subject', '--release',
-    '> TRACK:', '> SKIP:', 'lessons list --touches', 'Request (verbatim):', 'post-merge',
+    '> TRACK:', '> SKIP:', 'context --touches', 'Request (verbatim):', 'post-merge',
   ]) assert.ok(t.includes(k), k);
 });
 
