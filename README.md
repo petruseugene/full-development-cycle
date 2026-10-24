@@ -161,7 +161,7 @@ The interview sets flags that enable optional phases: `auto_tests`, `visual_test
 
 ## Project profile
 
-Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `recipes`, `visual`, `worktrees`, `strict_tokens`.
+Optional file `.dev-cycle/project.json` in the target project. Validate it with `profile validate`. Allowed top-level keys: `platform`, `interview_defaults`, `commands`, `extra_gates`, `post_merge`, `enabled_skills`, `guards`, `rules`, `recipes`, `visual`, `worktrees`, `strict_tokens`, `git`.
 
 ```json
 {
@@ -205,6 +205,15 @@ Optional boolean, default `false`. When `true`, `history add` for a dispatched s
 ```json
 { "strict_tokens": true }
 ```
+
+### `profile.git`
+Optional. `git.never_stage`: array of project-root-relative globs (no `..`, not absolute; `dir/` means everything under it). `git commit` and `ship` never stage a matching path, tracked-modified or untracked, and print one note with the count. Use it for owner work-in-progress that must stay out of every commit (raw design generations, chat exports, a root `app.json`).
+
+```json
+{ "git": { "never_stage": ["raw-designs/**", "exports/", "app.json"] } }
+```
+
+Staging scope: tracked modifications and deletions are staged as usual (minus `never_stage`). Untracked files outside the feature's Touches (task `**Touches:**` globs plus `feature.json` `areas[].touches`) are left out, with a note listing them by top-level dir. A feature without Touches (quick, bugfix, hotfix) stages untracked files but fails with `untracked-large` (nothing staged) when more than 20 new files or more than 10 MB would be added. `--include-untracked` on `git commit` and `ship` lifts both rules (never_stage and the secret-like-file guard still apply). Polish per-item commits are unchanged.
 
 ### `profile.worktrees`
 Optional worktree isolation for parallel task groups. Keys: `mode` (`off` default, `audit`, `auto`), `min_group` (integer >= 2, default 3), `dir` (repo-relative, default `.dev-cycle/worktrees`), `link` (globs symlinked into each worktree, default `**/node_modules`), `copy` (globs copied, default `.env`, `.env.*`) and `setup` (a command run inside each new worktree). `dir`, `link` and `copy` must be relative and contain no `..` segment. With `worktrees.mode` set to `audit`, groups still run in the shared tree and the CLI only records what isolation would have changed; `auto` runs eligible groups in isolated worktrees and merges them back with `worktree collect`. Expo and React Native projects usually want `"link": []` plus a `setup` command such as `npm ci`, because linked native dependency folders are not safe to share:
@@ -304,7 +313,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `review snapshot [--cycle n]` / `review diff [--since-cycle n] [--name-only]` | Incremental review: snapshot the working tree as a tree id (temporary index, real index untouched), then diff only what changed since a cycle |
 | `profile validate` / `profile show [--json]` | Validate or print the project profile |
 | `git branch [<name>] [--base <ref>]` | Create the feature or fix branch |
-| `git commit [--subject s] [--body b] [--scope s] [--trailer "Key: value"]... [--closes n,m]` | Commit staged work with a conventional message |
+| `git commit [--subject s] [--body b] [--scope s] [--trailer "Key: value"]... [--closes n,m] [--include-untracked]` | Stage the feature's changes (see `profile.git`) and commit with a conventional message |
 | `git push` | Push the branch |
 | `git pr [--base b] [--title t] [--body-footer text]` | Open the pull request |
 | `git merge [--ci-timeout s]` | Merge (runs the dod gate first) |

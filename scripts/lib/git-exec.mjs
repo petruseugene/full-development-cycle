@@ -25,6 +25,7 @@ import { CliError } from './core.mjs';
 export const GIT_REASONS = Object.freeze([
   'conflict', 'hook-failed', 'timeout', 'auth', 'push-rejected', 'ci-failing', 'ci-pending',
   'dod-failed', 'main-ahead', 'secret-like-file', 'not-mergeable', 'nothing-to-commit',
+  'untracked-large',
 ]);
 
 export const NETWORK_TIMEOUT_S = 120;

@@ -258,10 +258,10 @@ The single `phase: "orchestrator"` entry (`subagent: "orchestrator"`, `executor:
 | `PASSED` (dod-gate) | `ship` (§1 step 13) |
 | `FAILED` (dod-gate) | One-line escalation naming the gate; abort before push |
 | `git`/`ship` reason `conflict`, `not-mergeable`, `push-rejected` | Dispatch `dev-cycle:cli-fallback` (git mode) with the `FAILED …` line |
-| reason `hook-failed` | Hook output needs a code fix → implementer fix loop, retry the commit; `dev-cycle:cli-fallback` only if it still fails |
+| reason `hook-failed` | Hook output needs a code fix → implementer fix loop, retry; `dev-cycle:cli-fallback` only if it still fails |
 | reason `auth`, `main-ahead`, `ci-failing`, `ci-pending`, `dod-failed`, `secret-like-file` | Escalate in one line (reason + detail); no agent |
-| reason `timeout` | Retry once (`--gh-credential` if the keychain helper may hang); then escalate |
-| reason `nothing-to-commit` | Escalate in one line; no agent |
+| reason `timeout` | Retry once (`--gh-credential` if keychain hangs); then escalate |
+| reason `nothing-to-commit`, `untracked-large` | Escalate in one line; no agent |
 
 After 3 failed fix cycles for a single task, set status to `[BLOCKED]` and escalate.
 

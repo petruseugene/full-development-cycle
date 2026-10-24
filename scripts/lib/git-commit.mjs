@@ -1,10 +1,12 @@
 // dev-cycle git commit [--subject <s>] [--body <b>] [--scope <s>]
-//                      [--trailer "Key: value"]... [--closes <n,m>] [--gh-credential]
+//                      [--trailer "Key: value"]... [--closes <n,m>] [--include-untracked] [--gh-credential]
 //                                                                   (spec R16, R17)
 //
 // 1. Build + validate the message first (usage errors exit 2, nothing touched).
 //    Refuses the default branch / a detached HEAD (exit 2), like push/pr/merge.
-// 2. `git add -A`; a staged secret-like path → unstage everything, FAILED
+// 2. Stage per `planStaging` (tracked changes always; untracked files outside the
+//    feature's Touches are left out; `git.never_stage` globs never; see
+//    --include-untracked); a staged secret-like path → unstage everything, FAILED
 //    `secret-like-file`. Nothing staged → FAILED `nothing-to-commit`.
 // 3. Flow `feature`: snapshot spec.md, the tasks file and feature.json bytes,
 //    then flip IMPL-DONE → DONE (non-owner tasks), spec (and plan) frontmatter
@@ -25,6 +27,7 @@ import { globsOverlap } from './glob-overlap.mjs';
 import { isDeferred, parseItems, readPolish } from './polish.mjs';
 import { currentBranch } from './git-branch.mjs';
 import { GIT_COMMON_OPTIONS, GitFailure, GitPlumbingError, execOpts, gitOk, gitRun, outputTail } from './git-exec.mjs';
+import { loadProfile } from './profile.mjs';
 import { isOwnerTask, parsePlan, setFrontmatterStatus, setTaskStatus, tasksSource } from './plan.mjs';
 
 /**
@@ -42,7 +45,7 @@ export function commitTimeout(env) {
   return Number(raw);
 }
 
-const USAGE = 'git commit [--subject <s>] [--body <b>] [--scope <s>] [--trailer "Key: value"]... [--closes <n,m>] [--gh-credential]';
+const USAGE = 'git commit [--subject <s>] [--body <b>] [--scope <s>] [--trailer "Key: value"]... [--closes <n,m>] [--include-untracked] [--gh-credential]';
 
 /**
  * True when a repo path's basename looks like a secret (R16.1, security S5).
@@ -69,6 +72,128 @@ async function stagedPaths(opts, filter) {
   const r = await gitRun(args, opts);
   if (r.code !== 0) throw new GitPlumbingError(`git plumbing failed — git diff --cached: ${outputTail(r.stderr || r.stdout, 10) || `exit ${r.code}`}`);
   return r.stdout.split('\0').filter(Boolean);
+}
+
+// --- staging plan: Touches scope, git.never_stage, untracked guard ----------------
+
+export const UNTRACKED_MAX_FILES = 20;
+export const UNTRACKED_MAX_BYTES = 10 * 1024 * 1024;
+const STAGE_CHUNK = 200;
+
+/** True when `p` matches a project-root-relative glob (`dir/` means everything under it). */
+function globMatch(p, glob) {
+  const g = glob.endsWith('/') ? `${glob}**` : glob;
+  const test = (x) => { try { return path.posix.matchesGlob(x, g); } catch { return false; } };
+  // matchesGlob never lets `*`/`**` match dot-files: also try the path with leading dots masked.
+  return test(p) || test(maskDots(p));
+}
+
+/** Replace a leading `.` of every path segment so wildcards can match dot-files. */
+const maskDots = (p) => p.split('/').map((s) => (s.startsWith('.') ? `_${s.slice(1)}` : s)).join('/');
+
+/** True when `p` falls under (or equals) a Touches glob, dot-files included. */
+const inTouches = (p, touches) => touches.some((t) => globsOverlap(p, t) || globsOverlap(maskDots(p), t));
+
+const humanSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : n >= 1024 ? `${Math.round(n / 1024)} KB` : `${n} B`);
+
+/** Group root-relative paths by top-level dir: lines `dir/ (N files, size)`, at most `max` groups. */
+function groupLines(paths, sizes, max = 10) {
+  const groups = new Map();
+  for (const p of paths) {
+    const i = p.indexOf('/');
+    const key = i < 0 ? '.' : `${p.slice(0, i)}/`;
+    const g = groups.get(key) ?? { n: 0, bytes: 0 };
+    g.n++; g.bytes += sizes.get(p) ?? 0;
+    groups.set(key, g);
+  }
+  const lines = [...groups].sort((a, b) => b[1].n - a[1].n).slice(0, max)
+    .map(([k, g]) => `  ${k} (${g.n} file${g.n === 1 ? '' : 's'}, ${humanSize(g.bytes)})`);
+  if (groups.size > max) lines.push(`  … and ${groups.size - max} more dir(s)`);
+  return lines;
+}
+
+/** Touches globs of the feature: task `**Touches:**` lines (plan/spec) plus `areas[].touches`. */
+function featureTouches(featureDir, fj) {
+  const src = tasksSource(featureDir);
+  const out = new Set((src ? parsePlan(src.text) : []).flatMap((t) => t.touches ?? []));
+  for (const a of Array.isArray(fj.areas) ? fj.areas : []) for (const t of a?.touches ?? []) out.add(t);
+  return [...out].filter((t) => typeof t === 'string' && t !== '');
+}
+
+/**
+ * What `git commit` / `ship` would stage, read-only. Paths are project-root-relative
+ * (the root may be a subdir of the git top-level; `../x` marks a path outside it).
+ *  - tracked changes: staged unless `git.never_stage` matches;
+ *  - untracked: always staged under the feature folder / `.dev-cycle/`; elsewhere left out
+ *    when the feature has Touches and the path is outside them (unless includeUntracked);
+ *    never when `git.never_stage` matches.
+ * @param {string} featureDir
+ * @param {object} opts  gitRun opts
+ * @param {{includeUntracked?: boolean}} [o]
+ */
+export async function planStaging(featureDir, opts, { includeUntracked = false } = {}) {
+  const fj = readFeatureJson(featureDir);
+  const root = fs.realpathSync(resolveProjectRoot({ cwd: opts.cwd ?? process.cwd() }));
+  const gitTop = fs.realpathSync(await gitOk(['rev-parse', '--show-toplevel'], { ...opts, cwd: root }));
+  const never = loadProfile({ cwd: root, env: opts.env ?? process.env, stderr: { write() {} } }, { quiet: true }).profile?.git?.never_stage ?? [];
+  const touches = featureTouches(featureDir, fj);
+  const rel = toPosix(path.relative(root, fs.realpathSync(featureDir)));
+  const inFolder = (p) => (rel !== '' && !rel.startsWith('..') && (p === rel || p.startsWith(`${rel}/`)))
+    || p === '.dev-cycle' || p.startsWith('.dev-cycle/');
+
+  const st = await gitRun(['status', '--porcelain=v1', '-z', '--no-renames', '--untracked-files=all'], { ...opts, cwd: root });
+  if (st.code !== 0) throw new GitPlumbingError(`git plumbing failed — git status: ${outputTail(st.stderr || st.stdout, 10) || `exit ${st.code}`}`);
+  const stage = [];
+  const changed = []; // every tracked change, including already-staged ones
+  const untracked = [];
+  const leftOut = [];
+  let blocked = 0;
+  const sizes = new Map();
+  for (const e of parseStatus(st.stdout)) {
+    if (e.xy === 'AD') continue; // staged-then-deleted: nothing left to stage
+    const p = toPosix(path.relative(root, path.join(gitTop, e.path)));
+    if (never.some((g) => globMatch(p, g))) { blocked++; continue; }
+    if (e.xy !== '??') {
+      changed.push(p);
+      // Worktree side clean (`git rm`, `git mv` results): already staged, `git add` would fail on it.
+      if (e.xy[1] !== ' ') stage.push(p);
+      continue;
+    }
+    if (inFolder(p)) { changed.push(p); stage.push(p); continue; }
+    if (touches.length && !includeUntracked && !inTouches(p, touches)) {
+      leftOut.push(p);
+      try { sizes.set(p, fs.lstatSync(path.join(gitTop, e.path)).size); } catch { /* size is informational */ }
+      continue;
+    }
+    untracked.push(p);
+    try { sizes.set(p, fs.lstatSync(path.join(gitTop, e.path)).size); } catch { sizes.set(p, 0); }
+  }
+  stage.push(...untracked);
+  changed.push(...untracked);
+  const bytes = untracked.reduce((a, p) => a + (sizes.get(p) ?? 0), 0);
+  const large = touches.length === 0 && !includeUntracked
+    && (untracked.length > UNTRACKED_MAX_FILES || bytes > UNTRACKED_MAX_BYTES);
+  return { root, stage, changed, untracked, leftOut, blocked, sizes, bytes, large, touches: touches.length > 0 };
+}
+
+/** Stage explicit root-relative paths (literal pathspecs, chunked). */
+async function stagePaths(paths, opts, root) {
+  const o = { ...opts, cwd: root, env: { ...(opts.env ?? process.env), GIT_LITERAL_PATHSPECS: '1' } };
+  for (let i = 0; i < paths.length; i += STAGE_CHUNK) {
+    const r = await gitRun(['add', '-A', '--', ...paths.slice(i, i + STAGE_CHUNK)], o);
+    if (r.code !== 0) throw new GitPlumbingError(`git plumbing failed — git add: ${outputTail(r.stderr || r.stdout, 10) || `exit ${r.code}`}`);
+  }
+}
+
+/** Notes for what a plan left out; written to ctx.stderr. */
+function stagingNotes(plan, ctx) {
+  if (plan.blocked) ctx.stderr.write(`git commit: ${plan.blocked} path(s) matching git.never_stage were not staged\n`);
+  if (plan.leftOut.length) {
+    ctx.stderr.write(`git commit: ${plan.leftOut.length} untracked files outside Touches were left out (use --include-untracked to add)\n`);
+    const shown = plan.leftOut.slice(0, 10);
+    for (const l of groupLines(plan.leftOut, plan.sizes)) ctx.stderr.write(`${l}\n`);
+    ctx.stderr.write(`  e.g. ${shown.join(', ')}${plan.leftOut.length > shown.length ? ', …' : ''}\n`);
+  }
 }
 
 /** Unstage everything (mixed reset; on an unborn branch, drop the index entries). */
@@ -137,6 +262,7 @@ export async function commit(argv, ctx, internal = {}) {
       scope: { type: 'string' },
       trailer: { type: 'string', multiple: true },
       closes: { type: 'string' },
+      'include-untracked': { type: 'boolean' },
       ...GIT_COMMON_OPTIONS,
     },
   });
@@ -163,7 +289,12 @@ export async function commit(argv, ctx, internal = {}) {
   // Same guard as push/pr/merge: never land the feature commit on the
   // default branch or a detached HEAD (exit 2).
   await currentBranch('commit', opts);
-  await gitOk(['add', '-A'], opts);
+  const plan = await planStaging(featureDir, opts, { includeUntracked: Boolean(values['include-untracked']) });
+  stagingNotes(plan, ctx);
+  if (plan.large) {
+    throw new GitFailure('untracked-large', `${plan.untracked.length} new untracked files, ${humanSize(plan.bytes)} (limit ${UNTRACKED_MAX_FILES} files / ${humanSize(UNTRACKED_MAX_BYTES)}); nothing staged. Untracked additions:\n${groupLines(plan.untracked, plan.sizes).join('\n')}\nMove them out, add them to git.never_stage, or pass --include-untracked`);
+  }
+  await stagePaths(plan.stage, opts, plan.root);
   // `docs/features/` may be git-ignored (a repo that keeps its feature folders local):
   // the status flips still happen on disk but are never staged.
   const ignored = (await gitRun(['check-ignore', '-q', '--', featureDir], opts)).code === 0;

@@ -52,7 +52,7 @@ This rule overrides any temptation to summarise the wireframe into prose and ski
 5. **Run the project's check commands** (typically `npm run typecheck`, `npm run lint`, `npm test`). Prefer `.dev-cycle/project.json` `commands` (`lint`, `typecheck`, `test`, `format`) when present. Fix any errors before reporting DONE. Run tests with `node <CLI> check --scope touched --files <changed files> --steps test`, or the project test command with a quiet reporter. Never paste full test output into the report.
    If `pnpm-workspace.yaml` exists, run the checks with `pnpm -F <pkg> <script>` or `pnpm -r <script>`.
 6. **Check your touched files.** Before reporting DONE, run via Bash `node <CLI> check --scope touched --files <changed files>` (CLI path from the dispatch envelope). On FAILED, fix the issues and re-run once. If it still fails and you cannot fix it, report `DONE_WITH_CONCERNS` with the failing output; the orchestrator may dispatch cli-fallback in diagnose mode. Exit 2 (no check commands found) is not a failure — note it and continue.
-7. **Stage but do not commit** — the orchestrator commits.
+7. **Do not stage or commit** (git add is denied to subagents) — the orchestrator commits.
 
 ## TDD mode
 

@@ -58,7 +58,7 @@ const PROTECTED_WARNING_RE = /^protected skill '/;
 export const DISCOVERY_VALUES = Object.freeze(['full', 'internal', 'skip']);
 export const PROFILE_KEYS = Object.freeze([
   'platform', 'interview_defaults', 'commands', 'extra_gates', 'post_merge',
-  'enabled_skills', 'guards', 'rules', 'recipes', 'visual', 'worktrees', 'strict_tokens',
+  'enabled_skills', 'guards', 'rules', 'recipes', 'visual', 'worktrees', 'strict_tokens', 'git',
 ]);
 export const MAX_TIMEOUT_S = 86400;
 const NAME_RE = /^[a-z0-9-]+$/;
@@ -97,6 +97,17 @@ function validateWorktrees(w, errors) {
     });
   }
   if ('setup' in w && w.setup !== undefined && typeof w.setup !== 'string') errors.push('worktrees.setup must be a string');
+}
+
+/** `git` profile block: only `never_stage` (root-relative globs that `git commit`/`ship` never stage). */
+function validateGit(g, errors) {
+  if (!isObj(g)) { errors.push('git must be an object'); return; }
+  for (const k of Object.keys(g)) if (k !== 'never_stage') errors.push(`git: unknown key '${k}'`);
+  if (!('never_stage' in g)) return;
+  if (!isStrArr(g.never_stage)) { errors.push('git.never_stage must be an array of strings'); return; }
+  g.never_stage.forEach((p, i) => {
+    if (p === '' || unsafeRelPath(p)) errors.push(`git.never_stage[${i}] must be a project-root-relative glob without ".." (got ${JSON.stringify(p)})`);
+  });
 }
 
 /** Resolved `worktrees` config with defaults applied (profile assumed validated). */
@@ -264,6 +275,7 @@ export function validateProfile(profile, { skills = registrySkills() } = {}) {
     });
   }
   if ('worktrees' in profile) validateWorktrees(profile.worktrees, errors);
+  if ('git' in profile) validateGit(profile.git, errors);
   if ('visual' in profile) {
     const v = validateVisual(profile.visual);
     errors.push(...v.errors);

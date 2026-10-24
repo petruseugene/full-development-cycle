@@ -60,7 +60,7 @@ test('AC4: compound and wrapped forms are denied', () => {
 test('AC5: read-only git and lookalike text are allowed', () => {
   for (const c of ['git status', 'git diff HEAD', 'git log -5', 'git show x', 'git blame f', 'git ls-files',
     'git rev-parse HEAD', 'git grep x', 'git stash list', 'git stash show', 'git branch', 'git branch -a',
-    'git tag -l', 'git add a.ts', 'echo "git stash"', "grep 'git reset' f", 'npm test']) allowed(c);
+    'git tag -l', 'git rm a.ts', 'echo "git stash"', "grep 'git reset' f", 'npm test']) allowed(c);
 });
 
 test('AC6: fallback marker only at the very start', () => {

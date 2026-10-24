@@ -39,7 +39,7 @@ Get your `Touches:` globs by track. Full: from `briefs/task-<n>.md` (Touches, De
 3. **Write code + tests together** when `feature.json.auto_tests == true` (tests first when `tdd` is true, see TDD mode). Tests colocated per project convention.
 4. **Run check commands**: typecheck, lint, test. Prefer `.dev-cycle/project.json` `commands` (`lint`, `typecheck`, `test`, `format`) when present. Fix errors before reporting DONE. Run tests with `node <CLI> check --scope touched --files <changed files> --steps test`, or the project test command with a quiet reporter. Never paste full test output into the report.
 5. **Migrations** are their own task (per plan-writer's rules); follow `references/migrations.md` when the task is a migration. Do not sneak schema changes into a feature task.
-6. **Stage but do not commit** — the orchestrator commits.
+6. **Do not stage or commit** (git add is denied to subagents) — the orchestrator commits.
 
 ## TDD mode
 

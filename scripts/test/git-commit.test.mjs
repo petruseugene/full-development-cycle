@@ -179,9 +179,9 @@ test('AC14: staged .env → secret-like-file naming .env, nothing staged, files 
     const before = bytes(files);
     const head = repo.git(['rev-parse', 'HEAD']);
 
-    const r = await gitCommit(repo, []);
+    const r = await gitCommit(repo, ['--include-untracked']);
     assert.equal(r.code, 1);
-    assert.match(r.err, /^git commit: FAILED secret-like-file — .*\.env\b/);
+    assert.match(r.err, /FAILED secret-like-file — .*\.env\b/);
     assert.doesNotMatch(r.err, /\.env\.example/);
     assert.equal(repo.git(['diff', '--cached', '--name-only']), '');
     assert.equal(repo.git(['rev-parse', 'HEAD']), head);
@@ -238,7 +238,7 @@ test('AC15: bad trailer exits 2; bugfix / quick track need --subject; nothing to
 test('bugfix with --subject: verbatim header, no status flips', async () => {
   const repo = mkRepo({ flow: 'bugfix' });
   try {
-    repo.write('src/x.js', 'x\n');
+    repo.write('scripts/lib/a.mjs', 'x\n');
     const r = await gitCommit(repo, ['--subject', 'fix(x): handle y', '--body', 'Because.', '--closes', '7']);
     assert.equal(r.code, 0, r.err);
     assert.equal(repo.git(['log', '-1', '--format=%B']), 'fix(x): handle y\n\nBecause.\n\nCloses #7');
