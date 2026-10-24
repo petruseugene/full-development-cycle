@@ -6,7 +6,7 @@ After compaction, run `feature resume --feature <f>` and follow its `next:` line
 
 ## 1. Setup
 - State CLI: resolve once (`CLI="${CLAUDE_PLUGIN_ROOT}/scripts/dev-cycle.mjs"`, else `find ~/.claude/plugins -maxdepth 6 -path '*dev-cycle*/scripts/dev-cycle.mjs'`). Always `node "$CLI" <cmd> --feature <abs feature dir>`. Exit 0 OK, 1 FAILED, 2 usage or no commands. Put `State CLI: node <abs>` in every prompt. `<root>` = recorded plugin root.
-- Track: never asked. Print `> TRACK: quick — <reason>` before any dispatch. Request spans several areas, a new screen or a new API (`lite`), or several subsystems or architecture impact (`full`): print one `> TRACK: lite|full — <reason>` line and leave this file for the full Required reading (SKILL.md items 2–3).
+- Track: never asked. Print `> TRACK: quick — <reason>` before any dispatch. Request spans several areas, a new screen or a new API (`lite`), or several subsystems or architecture impact (`full`): print one `> TRACK: lite|full — <reason>` line and leave this file for the full Required reading (SKILL.md items 2–3). A list of 2 or more small owner-reported issues: print `> TRACK: polish — <n> owner-reported issues` and read `references/polish.md` instead.
 - Init: `profile show --json`, print `> defaults (project profile): …`. Infer `has_ui`, `has_backend`, `platform`, `auto_tests`, `visual_tests` (ask targeted questions only if ambiguous). `feature init <slug> --flow feature --answer k=v…` (one `--answer` per decided value; slug kebab-case, at most 40 chars), then `git branch` (`main-ahead` or `auth`: escalate in one line), then `feature set current_phase implement`.
 
 ## 2. Dispatch

@@ -14,7 +14,7 @@ NOT for: quick one-liner edits, pure research / Q&A, step-by-step pair-coding.
 ## Required reading
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` (the playbook core) first; `${CLAUDE_PLUGIN_ROOT}` is the plugin root on the `Plugin root:` line below.
-   **Fast path:** flow `bugfix`, or flow `feature` on track `quick` (not escalated, no explicit lite/full; `visual_tests`, `a11y_audit`, `security_review`, `dependency_audit` all false): read only item 1 and `references/quick.md`. Hotfix, escalation: full Required reading.
+   **Fast path:** flow `bugfix`, or flow `feature` on track `quick` (not escalated, no explicit lite/full; `visual_tests`, `a11y_audit`, `security_review`, `dependency_audit` all false): read only item 1 and `references/quick.md`. Track `polish` (small-issue list): item 1 + `references/polish.md`. Hotfix, escalation: full Required reading.
 2. Read `${CLAUDE_PLUGIN_ROOT}/skills/playbook/references/lifecycle.md` (§1, §1a, Bugfix flow, §1c, §4, §5, §7, §9, §10). "Playbook §1/§1a/§4/§5/§7/§9/§10" here and in the references mean this file; §2/§3/§6/§8 mean the core.
 3. `references/`: `dashboard-format.md`, `routing-edge-cases.md`, `dod-gate.md`, `parallel-groups.md`, `collision-and-fix-routing.md`; on demand `worktrees.md` (`worktrees.mode != off`), `release.md` (`ship --release`), `recipes.md` (profile recipes), `resume.md` (after compaction: `feature resume`)
 
@@ -32,7 +32,7 @@ fi
 node "$CLI" <command> [args] [--json] --feature <abs feature dir>
 ```
 
-Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature for `check`, `recipe`, `gate` writes. Put `State CLI: node <abs path>` in every dispatch prompt. Exit `0` OK/PASSED, `1` FAILED, `2` usage error (fix the call). Node ≥ 22.
+Pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); auto-detection skips a closed feature for `check`/`recipe`/`gate` writes. Put `State CLI: node <abs path>` in every dispatch prompt. Exit `0` OK/PASSED, `1` FAILED, `2` usage error. Node ≥ 22.
 
 | Command | Use |
 |---|---|
@@ -140,7 +140,7 @@ Always pass `--feature <abs dir>` (except `feature init` / `init` / `profile`); 
 
 8. **Budget warning** on every dashboard render: defaults `{usd: 50, time_s: 7200}` unless `feature.json.budget` is set; if `usd_est` (only with `measured_entries > 0`), `tokens_k` or `time_s` is over, emit exactly one `! BUDGET: <reasons>; budget <k>=<v>…` line (keys in effect), else nothing. It never aborts, re-dispatches or blocks dod. Rules and scenarios: `references/dashboard-format.md`.
 
-9. **Final report** — `node <CLI> report --feature <f>` path; totals (`totals.measured`, labelled an estimate), branch, commit SHA(s) (feature flow: one commit; bugfix/hotfix: one per task), PR URL, merge confirmation. List every owner step (`Task <n> — <title>`, status): always in `lite`, in `full` when owner tasks exist. Append `## Follow-ups` when pending.
+9. **Final report** — `node <CLI> report --feature <f>` path; totals (`totals.measured`, labelled an estimate), branch, commit SHA(s) (one per run; polish: one per item), PR URL, merge confirmation. List every owner step (`Task <n> — <title>`, status): always in `lite`, in `full` when owner tasks exist. Append `## Follow-ups` when pending.
 
 ## Output contract
 

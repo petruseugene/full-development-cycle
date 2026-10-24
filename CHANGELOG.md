@@ -3,6 +3,16 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.10] — 2026-10-24
+
+### Added
+
+- feat(polish): polish track for batches of small owner-reported fixes
+
+### Added
+
+- `polish` track (`feature init <slug> --flow feature --track polish`): a batch of small owner-reported issues in a CLI-written `polish.md`, grouped into areas, with `polish init|defer|touches|list`; `ship` makes one commit per item and merges with `--rebase`; the dashboard counts polish batches under Bugfixes (#27)
+
 ## [1.7.9] — 2026-10-24
 
 ### Added

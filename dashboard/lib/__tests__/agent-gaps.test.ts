@@ -73,14 +73,13 @@ describe('AC13 docs', () => {
     expect(s).toContain('--agent=on|off|auto');
     expect(s).toContain('--no-agent');
   });
-  it('CHANGELOG has Unreleased above 1.6.0 with Added and Fixed', () => {
+  it('CHANGELOG records the DASHBOARD_AGENT entry (Added) and credit-balance fix (Fixed) in some section', () => {
     const s = read(join(root, 'CHANGELOG.md'));
-    const u = s.indexOf('## [Unreleased]');
-    const v = s.indexOf('## [1.6.0]');
-    expect(u).toBeGreaterThan(-1);
-    expect(u).toBeLessThan(v);
-    const block = s.slice(u, v);
-    expect(block).toContain('### Added');
-    expect(block).toContain('### Fixed');
+    const sections = s.split(/^(?=## \[)/m).filter((x) => /^## \[(Unreleased|\d+\.\d+\.\d+)\]/.test(x));
+    const hit = sections.find((x) => x.includes('DASHBOARD_AGENT=auto|on|off'));
+    expect(hit).toBeDefined();
+    expect(hit).toContain('### Added');
+    expect(hit).toContain('### Fixed');
+    expect(hit).toContain('Credit balance too low');
   });
 });

@@ -105,7 +105,7 @@ export interface FeatureJson {
   history: HistoryEvent[];
   models?: Record<string, string>;
   discovery?: 'full' | 'internal' | 'skip';
-  track?: 'full' | 'lite' | 'quick';
+  track?: 'full' | 'lite' | 'quick' | 'polish';
   started_at?: string;
   sessions?: { id?: string; started_at?: string; ended_at?: string; [k: string]: unknown }[];
   areas?: { name: string; touches: string[] }[];

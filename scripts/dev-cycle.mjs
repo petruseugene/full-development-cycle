@@ -35,6 +35,7 @@ export const COMMANDS = Object.freeze({
   worktree: 'cmd-worktree.mjs',     // worktree start --tasks <n,..> | collect | remove --all|--task <n> | list
   map: 'cmd-map.mjs',               // map [--check] [--force] [--json] (.dev-cycle/map.md)
   context: 'cmd-context.mjs',       // context [--touches <g,..>] [--json] (lessons + map slice for prompts)
+  polish: 'cmd-polish.mjs',         // polish init --items <f> | defer <n> --reason <t> | touches <n> --add <g,..> | list [--json] (track polish)
   report: 'cmd-report.mjs',         // report [--feature <dir> | --all] [--out <dir>] [--json] [--no-network]
 });
 

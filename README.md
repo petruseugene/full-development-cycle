@@ -122,6 +122,8 @@ The orchestrator first picks a **track**, proposing one with a reason (and decid
 
 `quick` (the default) and bugfix use a lean fast path: the orchestrator reads only the playbook core and `references/quick.md`, runs one implementer, then check, review and ship. The code-reviewer runs on `sonnet` and gets your request text as its acceptance source; a change touching security-sensitive paths or words (auth, secrets, hooks, guards, telemetry) keeps the opus default. The projected cost of a clean run is about $1.35 or less, a target rather than a measurement; verify it with `node scripts/dev-cycle.mjs report --feature <folder>`.
 
+**Polish track.** A list of small owner-reported issues after a device test ("1) title clipped, 2) wrong colour, 3) crash on save") runs as one `polish` batch instead of N quick features: items live in a CLI-written `polish.md`, are grouped into areas for parallel implementers, and skip spec and plan. `ship` creates one commit per item (items that share a file get one combined commit) plus a batch commit, and merges with a rebase so main keeps every item commit. Deferred items carry a written reason (`node scripts/dev-cycle.mjs polish list` shows them). The dashboard counts a polish batch under Bugfixes with an item-count chip. The device check is the existing `post_merge` step after merge.
+
 Bug reports use the **bugfix** flow: no fixed interview, the orchestrator infers what it needs, an implementer finds the root cause and fixes it, then review gates run. **Hotfix** keeps a fixed interview, branches from the latest release tag and cherry-picks the fix forward to `main`.
 
 Other commands:
@@ -273,9 +275,13 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 
 | Command | Purpose |
 |---|---|
-| `feature init <slug> --flow <feature\|bugfix\|hotfix> [--track <full\|lite\|quick>] [--answer k=v]...` | Create the feature folder and `feature.json` (`--track` defaults to `quick` for `feature`) |
+| `feature init <slug> --flow <feature\|bugfix\|hotfix> [--track <full\|lite\|quick\|polish>] [--answer k=v]...` | Create the feature folder and `feature.json` (`--track` defaults to `quick` for `feature`) |
 | `feature set <key> <value>` | Set a `feature.json` key such as `current_phase` |
 | `feature resume [--json]` | Read-only: rebuild the working context after compaction (tasks or areas, gates, what `dod` still needs, open decisions, budget) and print the exact `next:` commands |
+| `polish init --items <file.json>` | Polish track only: write `polish.md` (P1..Pn) from a JSON array of `{title, area, touches, tag?, screen?}`, set `feature.json.areas` and record the untracked-file baseline |
+| `polish defer <n> --reason <text>` | Polish track only: defer an item with a written reason (dod accepts DONE or deferred-with-reason) |
+| `polish touches <n> --add <g,..>` | Polish track only: add globs to an item and to its area (assigns an implementer's `touches_expanded`) |
+| `polish list [--json]` | List the items with status, area and deferral reason |
 | `task <n> status <S>` | Set one task's status |
 | `task --all-from IMPL-DONE --to DONE` | Bulk status flip |
 | `spec status <S>` | Rewrite the status in `spec.md` frontmatter |

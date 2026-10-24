@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import type { Feature, TaskStatus } from '@/lib/types';
 import { AGENT_LIST, AgentBadge } from './AgentBadge';
 import { useSnapshot } from '@/lib/snapshot-context';
+import { isBugfixRow } from '@/lib/bugfixes';
 
 export const STATUS_DOT: Record<TaskStatus, string> = {
   TODO: 'todo',
@@ -67,7 +68,7 @@ export function Sidebar({
   const { activeFeatureId, snapshot } = useSnapshot();
 
   const featureCount = features.length;
-  const bugfixCount = features.filter((f) => f.meta?.flow === 'bugfix').length;
+  const bugfixCount = features.filter((f) => isBugfixRow(f.meta)).length;
   const activityCount = features.reduce(
     (n, f) => n + (f.meta?.history?.length ?? 0),
     0,

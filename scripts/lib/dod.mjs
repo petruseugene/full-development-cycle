@@ -6,6 +6,7 @@ import path from 'node:path';
 import { hasOpenDecisions } from './decisions.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { isOwnerTask, parsePlan, tasksSource } from './plan.mjs';
+import { isDeferred, readPolish } from './polish.mjs';
 import { analyzeSpec } from './spec-analyze.mjs';
 import { UsageError } from './core.mjs';
 
@@ -43,9 +44,10 @@ function isQuickFlow(fj) {
 export function requiredGates(fj, taskNumbers = [], ownerNumbers = []) {
   const track = isQuickFlow(fj) ? 'quick' : (fj.track || 'full');
   let gates;
-  if (track === 'lite') {
+  if (track === 'lite' || track === 'polish') {
     const areas = Array.isArray(fj.areas) ? fj.areas.map((a) => a?.name).filter(Boolean) : [];
-    gates = ['spec', ...(areas.length ? areas.map((n) => `implement.area=${n}`) : ['implement.area=<none>'])];
+    const area = areas.length ? areas.map((n) => `implement.area=${n}`) : ['implement.area=<none>'];
+    gates = track === 'polish' ? area : ['spec', ...area];
   } else if (track === 'quick') {
     gates = ['implement'];
   } else {
@@ -89,6 +91,18 @@ export function specAnalyzeCounts(dir, specText) {
 }
 
 /**
+ * Polish `items` precondition: MISSING (no polish.md / 0 items), OPEN (an item
+ * neither IMPL-DONE/DONE nor deferred with a reason), else OK.
+ * @param {string} dir
+ */
+export function polishItemsStatus(dir) {
+  const p = readPolish(dir);
+  if (!p || p.items.length === 0) return 'MISSING';
+  const open = p.items.some((it) => !(it.status === 'IMPL-DONE' || it.status === 'DONE' || isDeferred(it)));
+  return open ? 'OPEN' : 'OK';
+}
+
+/**
  * Full gate report: preconditions dod evaluates (tasks, decisions,
  * spec-analyze) followed by every required gate. `needs` is the non-passing
  * subset in the same order, so `needs[0]` is the gate dod fails on.
@@ -109,7 +123,11 @@ export function dodReport(dir) {
   if (full && fj.separate_plan === false) {
     add('tasks', tasks.length === 0 ? 'MISSING' : 'OK', tasks.length > 0);
   }
-  if (fj.flow === 'feature' && (fj.track || 'full') !== 'quick') {
+  if (fj.flow === 'feature' && fj.track === 'polish') {
+    const st = polishItemsStatus(dir);
+    add('items', st, st === 'OK');
+  }
+  if (fj.flow === 'feature' && !['quick', 'polish'].includes(fj.track || 'full')) {
     let spec = null;
     try { spec = fs.readFileSync(path.join(dir, 'spec.md'), 'utf8'); } catch (err) { if (err?.code !== 'ENOENT') throw err; }
     if (spec !== null) {

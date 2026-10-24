@@ -59,6 +59,7 @@ base  = quick_set                                                               
       | ["spec"]         + ["implement.task=<n>" ...] + owner_keys  if track == "full" and separate_plan == false
       | ["spec"] + ["implement.area=<name>" for each area in feature.json.areas]  if track == "lite"
       | ["implement"]                                                             if track == "quick"
+      | ["implement.area=<name>" for each area in feature.json.areas]             if track == "polish"   # no spec, plan or task keys
 required_gates = base
                + ["static-check"]                     # always
                + ["review"]                           # always
@@ -87,6 +88,8 @@ It is checked after `tasks` and before the history gates, is not a history gate 
 `! DOD-GATE FAILED: spec-analyze last status = ERRORS; aborting before push.`
 It is checked after `decisions` and before the history gates, is not a history gate and is not in the required set. Quick track, bugfix and hotfix are unaffected. Fix it by re-dispatching the writer (`spec-analyze.md`), never by editing spec.md.
 
+**Polish items.** On track `polish`, the `items` precondition runs before the gates and is not a history gate: `MISSING` when polish.md is absent or has 0 items; `OPEN` when any item is neither `IMPL-DONE`/`DONE` nor deferred with a non-empty reason (`polish defer <n> --reason`); otherwise `OK`. Failure prints `! DOD-GATE FAILED: items last status = OPEN; aborting before push.` `decisions` and `spec-analyze` are skipped on polish. Details: `polish.md`.
+
 A lite feature with absent or empty `areas` fails with
 `! DOD-GATE FAILED: implement.area=<none> last status = MISSING; aborting before push.`
 
@@ -97,6 +100,7 @@ A lite feature with absent or empty `areas` fails with
 | `implement.task=<n>` | frontend-dev / backend-dev | track `full`: every task in the tasks source (plan.md, or spec.md `## Tasks`) except tasks tagged `owner` |
 | `owner.task=<n>` | the tasks source status (not history) | track `full`, only when `feature.json.owner_blocking == true`: one key per task tagged `owner`, placed after the `implement.task` keys |
 | `implement.area=<name>` | frontend-dev / backend-dev | track `lite`: every entry in `feature.json.areas` |
+| `implement.area=<name>` (polish) | frontend-dev / backend-dev | track `polish`: every entry in `feature.json.areas` (`implement.area=<none>` when empty) |
 | `implement` | frontend-dev / backend-dev | track `quick`, and flow `bugfix` or `hotfix`: the single implementer |
 | `static-check` | `check --record` entry, or dev-cycle:cli-fallback (tree-wide) | always (once per feature) |
 | `review` | code-reviewer (whole-feature diff) | always (once per feature) |

@@ -3,6 +3,7 @@
 
 import { UsageError } from './core.mjs';
 import { isOwnerTask } from './plan.mjs';
+import { MAX_REASON, MAX_TITLE, isDeferred, sanitizeItemText } from './polish.mjs';
 
 const TRAILER_RE = /^[A-Za-z][A-Za-z-]*: .+$/;
 const PROBLEM_RE = /^##\s+(\d+\.\s*)?Problem\b/;
@@ -39,7 +40,7 @@ function topDir(touch) {
   return i > 0 ? p.slice(0, i) : '';
 }
 
-function deriveScope(fj, nonOwner) {
+export function deriveScope(fj, nonOwner) {
   const counts = new Map();
   for (const t of nonOwner) {
     for (const touch of t.touches ?? []) {
@@ -109,12 +110,18 @@ function fmt(e) {
  * Build the PR body (R18).
  * @param {{specText?:string, tasks?:any[], history?:any[], headMessage?:string, footer?:string}} o
  */
-export function buildPrBody({ specText = '', tasks = [], history = [], headMessage = '', footer = '' }) {
+export function buildPrBody({ specText = '', tasks = [], history = [], headMessage = '', footer = '', polishItems = null }) {
   const blocks = [];
   const summary = problemSummary(specText);
   if (summary) blocks.push(summary);
   const nonOwner = tasks.filter((t) => !isOwnerTask(t));
-  if (nonOwner.length) blocks.push(['Tasks:', ...nonOwner.map((t) => `- Task ${t.n}: ${t.title}`)].join('\n'));
+  if (Array.isArray(polishItems)) {
+    // Polish track (R10): Items:/Deferred: replace the Tasks: block.
+    const shipped = polishItems.filter((i) => !isDeferred(i));
+    const deferred = polishItems.filter((i) => isDeferred(i));
+    if (shipped.length) blocks.push(['Items:', ...shipped.map((i) => `- ${i.id}: ${titleOf(i)}`)].join('\n'));
+    if (deferred.length) blocks.push(['Deferred:', ...deferred.map((i) => `- ${i.id}: ${titleOf(i)} — ${reasonOf(i)}`)].join('\n'));
+  } else if (nonOwner.length) blocks.push(['Tasks:', ...nonOwner.map((t) => `- Task ${t.n}: ${t.title}`)].join('\n'));
   blocks.push(`Tests: ${fmt(lastEntry(history, ['auto-test', 'visual-test'])) ?? 'not run'}`);
   const rev = fmt(lastEntry(history, ['review']));
   const sec = fmt(lastEntry(history, ['security']));
@@ -123,4 +130,85 @@ export function buildPrBody({ specText = '', tasks = [], history = [], headMessa
   if (closes.length) blocks.push(closes.join('\n'));
   if (footer) blocks.push(String(footer));
   return blocks.join('\n\n') + '\n';
+}
+
+// --- polish track (R9, R10) -------------------------------------------------
+
+const titleOf = (item) => sanitizeItemText(item?.title, MAX_TITLE);
+const reasonOf = (item) => sanitizeItemText(item?.deferred, MAX_REASON);
+
+/** Item ids joined as `P1+P3`. */
+const idsPlus = (items) => items.map((i) => i.id).join('+');
+
+/**
+ * PR title for a polish batch (R10): `fix(<scope>): polish batch P<first>–P<last> (<k> items)`.
+ * <scope> is the most common per-item scope. Pure.
+ * @param {{fj:any, items:any[], scope?:string}} o
+ */
+export function polishPrTitle({ fj, items, scope }) {
+  let sc = scope;
+  if (!sc) {
+    const counts = new Map();
+    for (const it of items) {
+      const s = deriveScope(fj, [it]);
+      if (s) counts.set(s, (counts.get(s) ?? 0) + 1);
+    }
+    const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+    sc = ranked[0]?.[0] ?? String(fj?.feature_slug ?? '').split('-')[0];
+  }
+  const first = items[0]?.id ?? 'P1';
+  const last = items.at(-1)?.id ?? first;
+  return `fix(${sc}): polish batch ${first}–${last} (${items.length} items)`;
+}
+
+/**
+ * Build the per-item and batch commit messages for a polish run (R9). Pure:
+ * no I/O. Titles and reasons are re-sanitized here (L21); they only ever
+ * reach git through the `-F` message file.
+ *
+ * @param {{fj:any, items:any[], groups:Array<{items:any[], shared?:string[]}>,
+ *   batch:null|{leftovers?:string[]}, folder?:string, scope?:string, subject?:string,
+ *   body?:string, closes?:string|string[], trailers?:string[]}} o
+ * @returns {Array<{kind:'item'|'batch', subject:string, message:string, items:string[]}>}
+ */
+export function buildPolishMessages({ fj, items = [], groups = [], batch = null, folder = '', scope, subject, body, closes, trailers = [] }) {
+  for (const t of trailers) {
+    if (!validateTrailer(t)) throw new UsageError(`invalid --trailer '${t}' (expected "Key: value" on one line)`);
+  }
+  const closeLines = closesLines(closes);
+  const userBody = typeof body === 'string' && body.trim() ? body.trim() : '';
+  const hasSubject = typeof subject === 'string' && subject.trim() !== '';
+  const total = groups.length + (batch ? 1 : 0);
+  const out = [];
+
+  groups.forEach((g, idx) => {
+    const last = idx === total - 1;
+    const sorted = [...g.items].sort((a, b) => a.n - b.n);
+    const sc = scope || deriveScope(fj, sorted);
+    const blocks = [`fix(${sc}): ${idsPlus(sorted)} ${titleOf(sorted[0])}`];
+    const lines = sorted.map((i) => `- ${i.id}: ${titleOf(i)}`);
+    if (sorted.length > 1) lines.push(`Combined: ${sorted.map((i) => i.id).join(', ')} share ${(g.shared ?? []).join(', ')}`);
+    blocks.push(lines.join('\n'));
+    if (last && userBody) blocks.push(userBody);
+    blocks.push([`Refs: docs/features/${folder}/polish.md`, ...(last ? closeLines : [])].join('\n'));
+    if (trailers.length) blocks.push(trailers.join('\n'));
+    out.push({ kind: 'item', subject: blocks[0], message: blocks.join('\n\n') + '\n', items: sorted.map((i) => i.id) });
+  });
+
+  if (batch) {
+    const first = items[0]?.id ?? 'P1';
+    const lastId = items.at(-1)?.id ?? first;
+    const head = hasSubject ? subject.trim() : `chore(polish): close batch ${first}–${lastId}`;
+    const blocks = [head];
+    if (userBody) blocks.push(userBody);
+    const stat = (i) => (isDeferred(i) ? 'DEFERRED' : i.status === 'IMPL-DONE' ? 'DONE' : i.status);
+    blocks.push(['Items:', ...items.map((i) => `- ${i.id}: ${titleOf(i)} (${stat(i)})`)].join('\n'));
+    const deferred = items.filter((i) => isDeferred(i));
+    if (deferred.length) blocks.push(['Deferred:', ...deferred.map((i) => `- ${i.id}: ${titleOf(i)} — ${reasonOf(i)}`)].join('\n'));
+    if (batch.leftovers?.length) blocks.push(['Other changes:', ...batch.leftovers.map((p) => `- ${p}`)].join('\n'));
+    if (closeLines.length) blocks.push(closeLines.join('\n'));
+    if (trailers.length) blocks.push(trailers.join('\n'));
+    out.push({ kind: 'batch', subject: head, message: blocks.join('\n\n') + '\n', items: items.map((i) => i.id) });
+  }
+  return out;
 }

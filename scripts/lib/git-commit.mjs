@@ -17,10 +17,12 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { UsageError, parseCommandArgs, readText, resolveFeatureDir } from './core.mjs';
+import { UsageError, parseCommandArgs, readText, resolveFeatureDir, resolveProjectRoot } from './core.mjs';
 import { featureJsonPath, readFeatureJson } from './feature-json.mjs';
 import { appendHistory } from './history.mjs';
-import { buildCommitMessage } from './git-message.mjs';
+import { buildCommitMessage, buildPolishMessages } from './git-message.mjs';
+import { globsOverlap } from './glob-overlap.mjs';
+import { isDeferred, parseItems, readPolish } from './polish.mjs';
 import { currentBranch } from './git-branch.mjs';
 import { GIT_COMMON_OPTIONS, GitFailure, GitPlumbingError, execOpts, gitOk, gitRun, outputTail } from './git-exec.mjs';
 import { isOwnerTask, parsePlan, setFrontmatterStatus, setTaskStatus, tasksSource } from './plan.mjs';
@@ -92,19 +94,23 @@ function restore(snaps) {
  * Apply the R17 flips in the feature folder. Returns the files that changed.
  * @param {string} featureDir
  */
-function applyFlips(featureDir) {
+function applyFlips(featureDir, { polish = false } = {}) {
   const changed = new Set();
-  const src = tasksSource(featureDir);
+  // Polish: polish.md items (owner and deferred ones stay) and its frontmatter.
+  const src = polish ? readPolish(featureDir) : tasksSource(featureDir);
   if (src) {
     const before = src.text;
     let text = before;
-    for (const t of parsePlan(before).filter((x) => x.status === 'IMPL-DONE' && !isOwnerTask(x))) {
+    const flippable = polish
+      ? parseItems(before).filter((x) => x.status === 'IMPL-DONE' && !isOwnerTask(x) && !isDeferred(x))
+      : parsePlan(before).filter((x) => x.status === 'IMPL-DONE' && !isOwnerTask(x));
+    for (const t of flippable) {
       text = setTaskStatus(text, t.n, 'DONE', { source: path.basename(src.file) });
     }
     if (text !== before) { fs.writeFileSync(src.file, text); changed.add(src.file); }
   }
   // `spec status DONE`: spec.md frontmatter, plus plan.md frontmatter when present.
-  for (const name of ['spec.md', 'plan.md']) {
+  for (const name of polish ? ['polish.md'] : ['spec.md', 'plan.md']) {
     const file = path.join(featureDir, name);
     const text = readText(file, { optional: true });
     if (text === null) continue;
@@ -122,7 +128,7 @@ function applyFlips(featureDir) {
  * @param {string[]} argv
  * @param {import('./core.mjs').CliContext} ctx
  */
-export async function commit(argv, ctx) {
+export async function commit(argv, ctx, internal = {}) {
   const { values } = parseCommandArgs(argv, {
     usage: USAGE,
     options: {
@@ -137,6 +143,9 @@ export async function commit(argv, ctx) {
   const featureDir = resolveFeatureDir(ctx, values);
   const fj = readFeatureJson(featureDir);
   const flow = fj.flow ?? 'feature';
+  if (flow === 'feature' && fj.track === 'polish') {
+    return commitPolish({ values, ctx, featureDir, fj, releasePaths: internal?.releasePaths ?? [] });
+  }
   const specFile = path.join(featureDir, 'spec.md');
   const specText = readText(specFile, { optional: true }) ?? '';
   const src = tasksSource(featureDir);
@@ -208,4 +217,209 @@ export async function commit(argv, ctx) {
   const sha = await gitOk(['rev-parse', 'HEAD'], opts);
   const subject = message.split('\n')[0];
   return { text: `commit ${sha} ${subject}`, data: { sha, subject } };
+}
+
+// --- polish track: one commit per item (R8) -----------------------------------
+
+/** Parse `git status --porcelain=v1 -z --no-renames` into { path, deleted }. */
+function parseStatus(out) {
+  const res = [];
+  for (const entry of out.split('\0')) {
+    if (entry.length < 4) continue;
+    const xy = entry.slice(0, 2);
+    res.push({ path: entry.slice(3), xy, deleted: xy.includes('D') });
+  }
+  return res;
+}
+
+const toPosix = (p) => p.split(path.sep).join('/');
+
+/**
+ * The polish change set (R8 steps 1-4), read-only. Used by `commit()` and by
+ * ship's skip check. Paths are relative to the repo root.
+ * @param {string} featureDir
+ * @param {object} opts  gitRun opts (cwd, env)
+ * @param {{releasePaths?: string[]}} [extra]  paths ship's release step wrote (go to the batch commit)
+ */
+export async function polishChangeSet(featureDir, opts, { releasePaths = [] } = {}) {
+  const fj = readFeatureJson(featureDir);
+  const polish = readPolish(featureDir);
+  const items = polish?.items ?? [];
+  // One path root: the dev-cycle project root (where touches and untracked_baseline are
+  // recorded). git status paths are repo-top-relative, so convert them; ls-files runs here.
+  const root = fs.realpathSync(resolveProjectRoot({ cwd: opts.cwd ?? process.cwd() }));
+  const gitTop = fs.realpathSync(await gitOk(['rev-parse', '--show-toplevel'], { ...opts, cwd: root }));
+  const top = root;
+  const o = { ...opts, cwd: root };
+  const fromTop = (p) => toPosix(path.relative(root, path.join(gitTop, p)));
+  const rel = toPosix(path.relative(root, fs.realpathSync(featureDir)));
+  const inFolder = (p) => rel !== '' && !rel.startsWith('..') && (p === rel || p.startsWith(`${rel}/`));
+  const ignored = (await gitRun(['check-ignore', '-q', '--', featureDir], o)).code === 0;
+
+  const st = await gitRun(['status', '--porcelain=v1', '-z', '--no-renames', '--untracked-files=no'], o);
+  if (st.code !== 0) throw new GitPlumbingError(`git plumbing failed — git status: ${outputTail(st.stderr || st.stdout, 10) || `exit ${st.code}`}`);
+  const ut = await gitRun(['ls-files', '--others', '--exclude-standard', '-z'], o);
+  if (ut.code !== 0) throw new GitPlumbingError(`git plumbing failed — git ls-files: ${outputTail(ut.stderr || ut.stdout, 10) || `exit ${ut.code}`}`);
+  const baseline = new Set(Array.isArray(fj.untracked_baseline) ? fj.untracked_baseline : []);
+  const deleted = new Set();
+  const all = new Set();
+  const skippedBaseline = [];
+  for (const e of parseStatus(st.stdout)) {
+    // Staged-then-deleted (AD): gone from the index and the worktree once unstaged.
+    if (e.xy === 'AD') continue;
+    const p = fromTop(e.path);
+    all.add(p);
+    if (e.deleted) deleted.add(p);
+  }
+  for (const p of ut.stdout.split('\0').filter(Boolean)) {
+    if (baseline.has(p)) skippedBaseline.push(p); else all.add(p);
+  }
+
+  const release = new Set();
+  for (const r of releasePaths) {
+    let abs = path.isAbsolute(r) ? r : path.join(root, r);
+    try { abs = fs.realpathSync(abs); } catch { /* not on disk */ }
+    const p = toPosix(path.relative(root, abs));
+    if (all.has(p)) release.add(p);
+  }
+  const bookkeeping = [];
+  const changed = [];
+  for (const p of all) {
+    if (inFolder(p)) { if (!ignored) bookkeeping.push(p); } else if (!release.has(p)) changed.push(p);
+  }
+
+  // Assignment + grouping (union-find over items sharing a path).
+  const active = items.filter((i) => !isDeferred(i));
+  const assigned = new Map(active.map((i) => [i.n, changed.filter((p) => (i.touches ?? []).some((t) => globsOverlap(p, t)))]));
+  const parent = new Map(active.map((i) => [i.n, i.n]));
+  const find = (x) => { while (parent.get(x) !== x) x = parent.get(x); return x; };
+  const owner = new Map();
+  for (const i of active) {
+    for (const p of assigned.get(i.n)) {
+      if (owner.has(p)) parent.set(find(i.n), find(owner.get(p)));
+      else owner.set(p, i.n);
+    }
+  }
+  const byRoot = new Map();
+  const noPath = [];
+  for (const i of active) {
+    if (assigned.get(i.n).length === 0) { noPath.push(i); continue; }
+    const r = find(i.n);
+    if (!byRoot.has(r)) byRoot.set(r, []);
+    byRoot.get(r).push(i);
+  }
+  const groups = [...byRoot.values()].map((its) => {
+    its.sort((a, b) => a.n - b.n);
+    const count = new Map();
+    for (const i of its) for (const p of assigned.get(i.n)) count.set(p, (count.get(p) ?? 0) + 1);
+    const paths = [...count.keys()];
+    return { items: its, paths, shared: paths.filter((p) => count.get(p) > 1) };
+  }).sort((a, b) => a.items[0].n - b.items[0].n);
+  const skips = [];
+  for (const i of active) {
+    for (const p of skippedBaseline) if ((i.touches ?? []).some((t) => globsOverlap(p, t))) skips.push({ id: i.id, path: p });
+  }
+  const taken = new Set(groups.flatMap((g) => g.paths));
+  const leftovers = changed.filter((p) => !taken.has(p));
+
+  return {
+    fj, polish, items, ignored, top, rel, deleted, groups, noPath, leftovers, skips,
+    release: [...release], bookkeeping,
+    empty: groups.length === 0 && leftovers.length === 0 && release.size === 0 && bookkeeping.length === 0,
+  };
+}
+
+async function commitPolish({ values, ctx, featureDir, fj, releasePaths }) {
+  const opts = execOpts(ctx, values);
+  const commitTimeoutS = commitTimeout(ctx.env);
+  await currentBranch('commit', opts);
+  const cs = await polishChangeSet(featureDir, opts, { releasePaths });
+  if (!cs.polish) throw new UsageError(`file not found: ${path.join(featureDir, 'polish.md')}`);
+  const o = { ...opts, cwd: cs.top };
+  // Paths like app/[id]/page.tsx are literal names, not pathspec globs/magic.
+  const literal = { ...o, env: { ...(opts.env ?? process.env), GIT_LITERAL_PATHSPECS: '1' } };
+
+  const batchPaths = [...cs.leftovers, ...cs.release, ...cs.bookkeeping];
+  // The flips always dirty feature.json, so a non-ignored folder always gets a batch commit.
+  const hasBatch = batchPaths.length > 0 || !cs.ignored;
+  const messages = buildPolishMessages({
+    fj, items: cs.items, groups: cs.groups,
+    batch: hasBatch ? { leftovers: [...cs.leftovers, ...cs.release] } : null,
+    folder: path.basename(featureDir), scope: values.scope, subject: values.subject, body: values.body,
+    closes: values.closes, trailers: values.trailer ?? [],
+  });
+
+  if (cs.ignored) ctx.stderr.write('git commit: feature folder is git-ignored; not staged\n');
+  for (const k of cs.skips) ctx.stderr.write(`git commit: ${k.id} skips baseline untracked ${k.path}\n`);
+  for (const i of cs.noPath) ctx.stderr.write(`git commit: ${i.id} has no changed paths\n`);
+  if (cs.leftovers.length) ctx.stderr.write(`git commit: unassigned → batch commit: ${cs.leftovers.join(', ')}\n`);
+
+  const toStage = [...cs.groups.flatMap((g) => g.paths), ...batchPaths].filter((p) => !cs.deleted.has(p));
+  const secrets = toStage.filter(isSecretLike);
+  if (secrets.length) {
+    throw new GitFailure('secret-like-file', `refusing to commit secret-like file(s): ${secrets.join(', ')}; nothing staged`);
+  }
+  if (cs.groups.length === 0 && batchPaths.length === 0) {
+    throw new GitFailure('nothing-to-commit', 'no changes to commit');
+  }
+
+  // Anything already staged would leak into the first commit: start from an empty index.
+  if ((await stagedPaths(o)).length) {
+    ctx.stderr.write('git commit: unstaging previously staged paths; polish stages explicit paths only\n');
+    await unstageAll(o);
+  }
+
+  const start = await gitOk(['rev-parse', 'HEAD'], o);
+  const folderAbs = featureDir;
+  const snaps = [];
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-cycle-commit-'));
+  const created = [];
+  let current = '';
+  try {
+    for (let k = 0; k < messages.length; k++) {
+      const m = messages[k];
+      current = m.kind === 'batch' ? 'batch' : m.items.join('+');
+      let paths;
+      if (m.kind === 'item') {
+        paths = cs.groups[k].paths;
+      } else {
+        for (const f of [path.join(folderAbs, 'polish.md'), featureJsonPath(featureDir)]) snaps.push([f, snapshot(f)]);
+        const flipped = applyFlips(featureDir, { polish: true })
+          .map((f) => toPosix(path.relative(cs.top, fs.realpathSync(f)))).filter(() => !cs.ignored);
+        paths = [...new Set([...cs.leftovers, ...cs.release, ...cs.bookkeeping, ...flipped])];
+      }
+      const add = await gitRun(['add', '-A', '--', ...paths], literal);
+      if (add.code !== 0) throw new GitFailure('hook-failed', `${current}: git add: ${outputTail(add.stderr || add.stdout, 10) || `exit ${add.code}`}`);
+      const msgFile = path.join(tmpDir, `COMMIT_MSG_${k}`);
+      fs.writeFileSync(msgFile, m.message);
+      const r = await gitRun(['commit', '-q', '--cleanup=whitespace', '-F', msgFile], { ...o, timeout_s: commitTimeoutS });
+      if (r.code !== 0) {
+        const out = `${r.stdout}\n${r.stderr}`;
+        if (/nothing (added )?to commit|no changes added to commit/i.test(out)) {
+          throw new GitFailure('nothing-to-commit', `${current}: ${outputTail(out, 5) || 'no changes to commit'}`);
+        }
+        throw new GitFailure('hook-failed', `${current}: ${outputTail(out, 20) || `git commit exited ${r.code}`}`);
+      }
+      created.push({ sha: await gitOk(['rev-parse', 'HEAD'], o), subject: m.subject, items: m.items });
+    }
+    // Ignored feature folder and no batch commit: the flips still land on disk.
+    if (!messages.some((m) => m.kind === 'batch')) {
+      for (const f of [path.join(folderAbs, 'polish.md'), featureJsonPath(featureDir)]) snaps.push([f, snapshot(f)]);
+      applyFlips(featureDir, { polish: true });
+    }
+  } catch (err) {
+    // All-or-nothing: mixed reset to this run's start SHA keeps the working tree.
+    await gitRun(['reset', '-q', start], o).catch(() => {});
+    restore(snaps);
+    throw err;
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+
+  const sha = await gitOk(['rev-parse', 'HEAD'], o);
+  const last = created.at(-1);
+  return {
+    text: created.map((c) => `commit ${c.sha} ${c.subject}`).join('\n'),
+    data: { sha, subject: last.subject, commits: created },
+  };
 }
