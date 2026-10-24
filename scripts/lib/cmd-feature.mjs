@@ -140,6 +140,7 @@ const SETTABLE = {
   task_count: (v) => (nonNegInt(v) ? null : 'must be a non-negative integer'),
   branch: (v) => (typeof v === 'string' && v !== '' ? null : 'must be a non-empty string'),
   owner_blocking: (v) => (typeof v === 'boolean' ? null : 'must be a boolean'),
+  tdd: (v) => (typeof v === 'boolean' ? null : 'must be a boolean'),
   status: (v) => (v === 'blocked' || v === 'active' ? null : 'must be "blocked" or "active"'),
   design_source: (v) => (v === null || typeof v === 'string' ? null : 'must be a string or null'),
   areas(v) {

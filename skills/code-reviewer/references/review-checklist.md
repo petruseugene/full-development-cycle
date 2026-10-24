@@ -28,6 +28,8 @@ Walk these in order. Each is a yes/no question.
 - [ ] If `feature.json.auto_tests == true`, are tests added/updated?
 - [ ] Do tests cover the happy path AND at least one error path?
 - [ ] Do tests assert behaviour, not implementation?
+- [ ] If `feature.json.tdd == true`, does the implementer report show RED→GREEN evidence (the `tdd:` block or the `TDD g/n` summary suffix)?
+- [ ] More than 3 tests for one AC without a stated reason is over budget: a `nit` finding.
 
 ## Security & data
 - [ ] No secrets / tokens / PII committed.

@@ -36,10 +36,22 @@ Get your `Touches:` globs by track. Full: from `briefs/task-<n>.md` (Touches, De
 1. **Detect stack** from manifest files. Note framework + ORM/DB driver + auth approach + test runner.
    Also probe `supabase/config.toml`: if it exists, the stack is Supabase — read the Supabase section of `references/stack-notes.md`.
 2. **Re-read existing patterns** — find a similar handler/service/job and follow its conventions (file location, naming, error handling, test placement).
-3. **Write code + tests together** when `feature.json.auto_tests == true`. Tests colocated per project convention.
+3. **Write code + tests together** when `feature.json.auto_tests == true` (tests first when `tdd` is true, see TDD mode). Tests colocated per project convention.
 4. **Run check commands**: typecheck, lint, test. Prefer `.dev-cycle/project.json` `commands` (`lint`, `typecheck`, `test`, `format`) when present. Fix errors before reporting DONE. Run tests with `node <CLI> check --scope touched --files <changed files> --steps test`, or the project test command with a quiet reporter. Never paste full test output into the report.
 5. **Migrations** are their own task (per plan-writer's rules); follow `references/migrations.md` when the task is a migration. Do not sneak schema changes into a feature task.
 6. **Stage but do not commit** — the orchestrator commits.
+
+## TDD mode
+
+Applies when `feature.json.tdd == true` or the brief has `## TDD`. Unit per track: full = the brief's ACs; `lite` = the area's AC ids; `quick` = each requested behaviour; `bugfix` = one failing regression test that reproduces the reported bug. Per unit:
+
+1. Write the failing test first.
+2. Probe with `node <CLI> check --scope touched --files <test files> --steps test`; confirm RED (exit 1, failure in the new test). A test that passes before the code exists goes under `skipped`, not counted.
+3. Write the minimal code.
+4. Re-run the probe; confirm GREEN (exit 0).
+5. Refactor, re-run.
+
+Test budget: 1 happy-path + at most 2 error-path tests per AC. Over budget needs a one-line reason. Never paste the profile test command into a shell.
 
 ## Final step — check before reporting DONE
 
@@ -67,3 +79,5 @@ concerns: <only if DONE_WITH_CONCERNS>
 ```
 
 `touches_expanded:` is optional. Absent or `[]` means "stayed within `Touches:`." A populated list is the honor-based signal the orchestrator uses for collision detection against parallel siblings.
+
+In TDD mode only, add the optional key `tdd: {red: [AC<n>], green: [AC<n>], tests: ["<file> › <name>"], skipped: ["AC<n>: <reason>"]}` and end `summary:` with `TDD <g>/<n> AC red→green` (g = ACs that went RED→GREEN, n = owned ACs).

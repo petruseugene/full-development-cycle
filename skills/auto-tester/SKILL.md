@@ -17,8 +17,9 @@ description: Writes and runs unit + integration tests for the current task. Dete
 2. `references/what-to-mock.md`
 3. `references/coverage-targets.md`
 4. `references/test-quality.md`
-5. The current task slice from tasks file (`<feature folder>/plan.md` or spec.md `## Tasks`)
-6. If `feature.json.platform == "mobile"` or `jest-expo` / `expo` is a dependency: `references/rn-jest-setup.md`
+5. `<feature folder>/feature.json`
+6. The current task slice from tasks file (`<feature folder>/plan.md` or spec.md `## Tasks`)
+7. If `feature.json.platform == "mobile"` or `jest-expo` / `expo` is a dependency: `references/rn-jest-setup.md`
 
 ## The job
 
@@ -27,7 +28,8 @@ description: Writes and runs unit + integration tests for the current task. Dete
 2. **Find the existing test conventions** in neighbouring files (location, naming, fixture style).
 3. **Write tests** for the current task's acceptance criteria. Aim for 1 happy-path + 1-2 error paths per criterion.
 4. **Run tests** with `node <CLI> check --scope touched --files <changed files> --steps test`, or the project test command with a quiet reporter (e.g. `--test-reporter=dot`). Never paste full test output into the report. If any fail due to the test (not the impl), fix the test. If they fail due to the impl, return `FAILED` with details.
-5. **Stage but do not commit** — the orchestrator commits.
+5. **Audit mode** when `feature.json.tdd == true`: the implementer already wrote tests first. Run the touched tests, map the diff's tests to the live ACs, and write new tests only for ACs that would otherwise be `none` and for handled error paths without a test. Heading: `## Task <N> auto-tests (audit) — <ISO ts> — PASSED|FAILED`. Report over-budget tests as `- note: over budget AC<n> — <count> tests`; note bullets never start with `pass`, `fail`, `running` or `x`. Budget: see `references/coverage-targets.md`.
+6. **Stage but do not commit** — the orchestrator commits.
 
 ## Output contract
 

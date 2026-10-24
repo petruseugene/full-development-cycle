@@ -151,6 +151,7 @@ The interview sets flags that enable optional phases: `auto_tests`, `visual_test
 - `platform`: `web` (default) or `mobile`. It only switches the verification method in gates, not whether they run.
 - `discovery`: `full`, `internal` or `skip`. The default comes from the track (`full` → `full`, `lite` and `quick` → `skip`), except that when a project profile exists, `full` and `lite` default to `internal`; an explicit value wins.
 - `track` defaults to `quick` for `feature init` when `--track` is omitted (a notice is printed on stderr).
+- `tdd`: boolean, default `false`. Set via profile `interview_defaults`, `--answer tdd=true` or `feature set tdd true`. Implementers run a RED→GREEN loop per unit (failing test first, then code), and the auto-tester switches to audit mode. Applies to every track and the bugfix flow.
 - `models`: optional map of skill name to `haiku`, `sonnet`, `opus` or `inherit`, overriding the playbook's default model for that feature.
 
 ## Project profile
@@ -164,6 +165,7 @@ Optional file `.dev-cycle/project.json` in the target project. Validate it with 
     "has_ui": true,
     "has_backend": true,
     "auto_tests": true,
+    "tdd": true,
     "visual_tests": false,
     "dependency_audit": true,
     "release_manage": false,
@@ -190,7 +192,7 @@ Optional file `.dev-cycle/project.json` in the target project. Validate it with 
 }
 ```
 
-Notes: `commands` accepts `lint`, `typecheck`, `test` and `format`; a command may contain an unquoted `{files}` placeholder for touched-scope runs. `interview_defaults` accepts `has_ui`, `platform`, `has_backend`, `architecturally_significant`, `design_source`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `discovery` and `separate_plan`. Gate and post-merge names match `[a-z0-9-]+`; post-merge steps with `confirm: true` never run without `--confirmed`. Some skills are always enabled regardless of `enabled_skills` (playbook, orchestrator, using-dev-cycle, spec-writer, frontend-dev, backend-dev, code-reviewer, cli-fallback). `profile validate` prints "protected skill '...' is always enabled" warnings for protected skills left out of `enabled_skills`; they are expected and harmless. Claude Code cannot disable individual plugin skills, so `enabled_skills` only stops dispatch; it does not reduce prompt size.
+Notes: `commands` accepts `lint`, `typecheck`, `test` and `format`; a command may contain an unquoted `{files}` placeholder for touched-scope runs. `interview_defaults` accepts `has_ui`, `platform`, `has_backend`, `architecturally_significant`, `design_source`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `tdd`, `discovery` and `separate_plan`. Gate and post-merge names match `[a-z0-9-]+`; post-merge steps with `confirm: true` never run without `--confirmed`. Some skills are always enabled regardless of `enabled_skills` (playbook, orchestrator, using-dev-cycle, spec-writer, frontend-dev, backend-dev, code-reviewer, cli-fallback). `profile validate` prints "protected skill '...' is always enabled" warnings for protected skills left out of `enabled_skills`; they are expected and harmless. Claude Code cannot disable individual plugin skills, so `enabled_skills` only stops dispatch; it does not reduce prompt size.
 
 ### `profile.worktrees`
 Optional worktree isolation for parallel task groups. Keys: `mode` (`off` default, `audit`, `auto`), `min_group` (integer >= 2, default 3), `dir` (repo-relative, default `.dev-cycle/worktrees`), `link` (globs symlinked into each worktree, default `**/node_modules`), `copy` (globs copied, default `.env`, `.env.*`) and `setup` (a command run inside each new worktree). `dir`, `link` and `copy` must be relative and contain no `..` segment. With `worktrees.mode` set to `audit`, groups still run in the shared tree and the CLI only records what isolation would have changed; `auto` runs eligible groups in isolated worktrees and merges them back with `worktree collect`. Expo and React Native projects usually want `"link": []` plus a `setup` command such as `npm ci`, because linked native dependency folders are not safe to share:

@@ -48,11 +48,23 @@ This rule overrides any temptation to summarise the wireframe into prose and ski
    If `expo` is a dependency in `package.json`, it is Expo / React Native: if `expo:*` skills are available, invoke `expo:expo-overview` first, then read the "React Native + Expo (Expo Router)" section of `references/stack-notes.md` and the "React Native" section of `references/pitfalls.md`.
 2. **Open every wireframe in the binding contract above.** This is step zero of any frontend task — non-negotiable when wireframes are listed.
 3. **Re-read existing patterns** — find an existing component of similar shape and follow its conventions (file location, naming, styling, test placement). Do not invent new patterns.
-4. **Write code + tests together** when `feature.json.auto_tests == true`. Tests live with the component (e.g., `<Component>.test.tsx` colocated).
+4. **Write code + tests together** when `feature.json.auto_tests == true` (tests first when `tdd` is true, see TDD mode). Tests live with the component (e.g., `<Component>.test.tsx` colocated).
 5. **Run the project's check commands** (typically `npm run typecheck`, `npm run lint`, `npm test`). Prefer `.dev-cycle/project.json` `commands` (`lint`, `typecheck`, `test`, `format`) when present. Fix any errors before reporting DONE. Run tests with `node <CLI> check --scope touched --files <changed files> --steps test`, or the project test command with a quiet reporter. Never paste full test output into the report.
    If `pnpm-workspace.yaml` exists, run the checks with `pnpm -F <pkg> <script>` or `pnpm -r <script>`.
 6. **Check your touched files.** Before reporting DONE, run via Bash `node <CLI> check --scope touched --files <changed files>` (CLI path from the dispatch envelope). On FAILED, fix the issues and re-run once. If it still fails and you cannot fix it, report `DONE_WITH_CONCERNS` with the failing output; the orchestrator may dispatch cli-fallback in diagnose mode. Exit 2 (no check commands found) is not a failure — note it and continue.
 7. **Stage but do not commit** — the orchestrator commits.
+
+## TDD mode
+
+Applies when `feature.json.tdd == true` or the brief has `## TDD`. Unit per track: full = the brief's ACs; `lite` = the area's AC ids; `quick` = each requested behaviour; `bugfix` = one failing regression test that reproduces the reported bug. Per unit:
+
+1. Write the failing test first.
+2. Probe with `node <CLI> check --scope touched --files <test files> --steps test`; confirm RED (exit 1, failure in the new test). A test that passes before the code exists goes under `skipped`, not counted.
+3. Write the minimal code.
+4. Re-run the probe; confirm GREEN (exit 0).
+5. Refactor, re-run.
+
+Test budget: 1 happy-path + at most 2 error-path tests per AC. Over budget needs a one-line reason. Never paste the profile test command into a shell.
 
 ## Output contract
 
@@ -74,3 +86,5 @@ touches_expanded: []   # optional. List every file you wrote that is NOT
                        # be honest, the contract is not tool-enforced.
 ---
 ```
+
+In TDD mode only, add the optional key `tdd: {red: [AC<n>], green: [AC<n>], tests: ["<file> › <name>"], skipped: ["AC<n>: <reason>"]}` and end `summary:` with `TDD <g>/<n> AC red→green` (g = ACs that went RED→GREEN, n = owned ACs).

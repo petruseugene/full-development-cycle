@@ -17,3 +17,9 @@ Internal helpers don't need tests — if they break, the function tests catch it
 - The task crosses a layer boundary that hasn't been tested before.
 - The task introduces a new external dependency.
 - The task fixes a bug found in production — add a regression test.
+
+## Test budget
+Test budget: 1 happy-path + at most 2 error-path tests per AC.
+- No tests for trivial getters/setters.
+- Prefer extending an existing test file over creating one.
+- A test beyond the budget needs a one-line reason (a test comment or the report).

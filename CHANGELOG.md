@@ -3,6 +3,16 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.7] — 2026-10-24
+
+### Added
+
+- feat(tdd): opt-in TDD mode for implementers
+
+### Added
+
+- `tdd` mode: profile `interview_defaults.tdd`, `--answer tdd=true` and `feature set tdd`; implementers follow a RED→GREEN loop and the auto-tester audits
+
 ## [1.7.6] — 2026-10-24
 
 ### Added
