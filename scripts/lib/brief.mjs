@@ -97,6 +97,29 @@ export function threatNotes(specText) {
   return start < 0 ? '' : lines.slice(start, end).join('\n').replace(/\s+$/, '');
 }
 
+export const TEST_BUDGET_LINE = 'Test budget: 1 happy-path + at most 2 error-path tests per AC.';
+
+/** `## TDD` section (only when fj.tdd === true): live AC ids, probe, project test command, budget, evidence. */
+function tddSection(task, specText, fj) {
+  const { acs } = parseSpecAcs(specText);
+  const live = [];
+  for (const n of parseAcIds(task.acceptanceRaw ?? '')) {
+    let ids = [n];
+    try { ids = resolveAc(acs, n).live; } catch (e) { if (!(e instanceof UsageError)) throw e; }
+    for (const l of ids) if (!live.includes(l)) live.push(l);
+  }
+  const sec = ['## TDD', ''];
+  sec.push(`Owned ACs: ${live.length ? live.map((n) => `AC${n}`).join(', ') : '(none listed)'} — write one failing test per AC first (RED), then the minimal code (GREEN), then refactor.`, '');
+  sec.push('Probe: `node <CLI> check --scope touched --files <test files> --steps test` — RED = exit 1 with a failure in the new test file, GREEN = exit 0.', '');
+  const cmd = fj?.profile?.commands?.test;
+  if (typeof cmd === 'string' && cmd !== '') {
+    sec.push(`Project test command: ${codeSpan(cmd)} (for information; a \`{files}\` placeholder scopes the run to the touched tests).`, '');
+  }
+  sec.push(TEST_BUDGET_LINE, '');
+  sec.push('Evidence: end `summary:` with `TDD <g>/<n> AC red→green` and add `tdd: {red: [...], green: [...], tests: [...], skipped: [...]}` to the report.', '');
+  return sec;
+}
+
 export function buildBrief({ task, specText, fj, lessons = [] }) {
   const out = [];
   out.push(`# Brief: Task ${task.n}${task.title ? ` — ${task.title}` : ''}`, '');
@@ -140,6 +163,8 @@ export function buildBrief({ task, specText, fj, lessons = [] }) {
     }
     out.push('');
   }
+
+  if (fj?.tdd === true) out.push(...tddSection(task, specText, fj));
 
   out.push('## Touches', '');
   out.push(...(task.touches.length ? task.touches.map((t) => `- \`${t}\``) : ['(none)']), '');

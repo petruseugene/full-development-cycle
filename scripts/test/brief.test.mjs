@@ -329,3 +329,37 @@ test('AC6: cyclic supersede chain exits 2', () => {
     assert.match(r.stderr, /cannot resolve/);
   } finally { fx.cleanup(); }
 });
+
+function tddBrief(acc, fjOver) {
+  const fx = mkFixture({ featureJson: sampleFeatureJson(fjOver), files: { 'plan.md': amendPlan(acc), 'spec.md': AMEND_SPEC } });
+  try {
+    const r = runCli(['brief', '1'], { cwd: fx.root });
+    assert.equal(r.status, 0, r.stderr);
+    return fs.readFileSync(path.join(fx.featureDir, 'briefs', 'task-1.md'), 'utf8');
+  } finally { fx.cleanup(); }
+}
+
+test('tdd AC7: absent or false => no TDD section, identical output', () => {
+  const base = tddBrief('AC1, AC5');
+  assert.doesNotMatch(base, /## TDD/);
+  assert.equal(tddBrief('AC1, AC5', { tdd: false }), base);
+});
+
+test('tdd AC8: ## TDD sits between Acceptance criteria and Touches, with live AC ids', () => {
+  const md = tddBrief('AC1, AC2', { tdd: true });
+  const heads = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
+  assert.deepEqual(heads.slice(0, 5), ['Task', 'Acceptance criteria', 'TDD', 'Touches', 'Depends on']);
+  const sec = md.split(/^## TDD$/m)[1].split(/^## /m)[0];
+  assert.match(sec, /Owned ACs: AC1, AC5\b/);
+  assert.doesNotMatch(sec, /AC2/);
+  assert.ok(sec.includes('check --scope touched --files <test files> --steps test'));
+  assert.ok(sec.includes('Test budget: 1 happy-path + at most 2 error-path tests per AC.'));
+  assert.doesNotMatch(sec, /Project test command/);
+});
+
+test('tdd AC9: project test command is emitted as a round-tripping code span', async () => {
+  const { codeSpan } = await import('../lib/brief.mjs');
+  const cmd = 'node --test `x`';
+  const md = tddBrief('AC1', { tdd: true, profile: { commands: { test: cmd } } });
+  assert.ok(md.includes(`Project test command: ${codeSpan(cmd)}`), md);
+});

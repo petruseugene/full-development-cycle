@@ -1,7 +1,7 @@
 {
   "name": "dev-cycle",
   "description": "Full development cycle: an orchestrated skill pack that takes any feature or bugfix from idea to merged PR through strict subagent dispatch — discovery, architecture, spec, plan, parallel implementation, review gates, tests, git.",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "commands": [
     "./commands/orchestrator.md",
     "./commands/architector.md",

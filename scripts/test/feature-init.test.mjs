@@ -263,3 +263,56 @@ test('AC31: discovery defaults to internal with a profile (full, lite); preceden
   assert.equal(readFj(init(nx, ['--flow', 'feature', '--track', 'lite']).stdout.trim()).discovery, 'skip');
   nx.cleanup();
 });
+
+test('tdd AC2/AC4: --answer tdd writes top-level; invalid exits 2; absent by default', () => {
+  const fx = mkFixture();
+  let r = init(fx, ['--flow', 'feature', '--track', 'lite', '--answer', 'tdd=true']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(readFj(r.stdout.trim()).tdd, true);
+  r = init(fx, ['--flow', 'feature', '--track', 'lite', '--answer', 'tdd=maybe']);
+  assert.equal(r.status, 2);
+  r = init(fx, ['--flow', 'feature', '--track', 'lite']);
+  assert.equal('tdd' in readFj(r.stdout.trim()), false);
+  fx.cleanup();
+});
+
+test('tdd AC3: profile default applies to full, quick and bugfix; --answer overrides', () => {
+  const fx = mkFixture();
+  fx.write('.dev-cycle/project.json', JSON.stringify({ interview_defaults: { tdd: true } }));
+  for (const args of [['--flow', 'feature', '--track', 'full'], ['--flow', 'feature', '--track', 'quick'], ['--flow', 'bugfix']]) {
+    const r = init(fx, args);
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(readFj(r.stdout.trim()).tdd, true, args.join(' '));
+  }
+  const o = init(fx, ['--flow', 'feature', '--track', 'full', '--answer', 'tdd=false']);
+  assert.equal(readFj(o.stdout.trim()).tdd, false);
+  fx.cleanup();
+});
+
+test('tdd AC5: feature set tdd validates boolean', () => {
+  const fx = mkFixture();
+  const set = (v) => runCli(['feature', 'set', 'tdd', v], { cwd: fx.root });
+  assert.equal(set('true').status, 0);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(fx.featureDir, 'feature.json'), 'utf8')).tdd, true);
+  const bad = set('yes');
+  assert.equal(bad.status, 2);
+  assert.match(bad.stderr, /must be a boolean/);
+  fx.cleanup();
+});
+
+test('tdd AC6: tdd with auto_tests=false is valid and silent; skill forcing leaves tdd', () => {
+  const fx = mkFixture();
+  let r = init(fx, ['--flow', 'feature', '--track', 'full', '--answer', 'tdd=true', '--answer', 'auto_tests=false']);
+  assert.equal(r.status, 0, r.stderr);
+  const fj = readFj(r.stdout.trim());
+  assert.equal(fj.tdd, true);
+  assert.equal(fj.auto_tests, false);
+  assert.doesNotMatch(r.stderr, /tdd|auto_tests/);
+  fx.write('.dev-cycle/project.json', JSON.stringify({ enabled_skills: ['frontend-dev'], interview_defaults: { tdd: true } }));
+  r = init(fx, ['--flow', 'feature', '--track', 'full']);
+  assert.equal(r.status, 0, r.stderr);
+  const f2 = readFj(r.stdout.trim());
+  assert.equal(f2.auto_tests, false);
+  assert.equal(f2.tdd, true);
+  fx.cleanup();
+});

@@ -206,3 +206,11 @@ test('AC22: validate accepts old skill names with one warning line each', () => 
   assert.equal(show.stderr.split('\n').filter((l) => /a11y-auditor/.test(l)).length, 1);
   fx.cleanup();
 });
+
+test('tdd AC1: interview_defaults.tdd accepts booleans, rejects other types', async () => {
+  const { validateProfile } = await import('../lib/profile.mjs');
+  assert.deepEqual(validateProfile({ interview_defaults: { tdd: true } }).errors, []);
+  assert.deepEqual(validateProfile({ interview_defaults: { tdd: false } }).errors, []);
+  const bad = validateProfile({ interview_defaults: { tdd: 'yes' } }).errors;
+  assert.ok(bad.some((e) => e.includes('interview_defaults.tdd')), bad.join('\n'));
+});

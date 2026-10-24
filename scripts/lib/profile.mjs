@@ -29,6 +29,7 @@ export const INTERVIEW_KEYS = Object.freeze({
   discovery: 'discovery',
   separate_plan: 'boolean',
   owner_blocking: 'boolean',
+  tdd: 'boolean',
 });
 /** Skills that are always enabled regardless of profile.enabled_skills (R34). */
 export const PROTECTED_SKILLS = Object.freeze([

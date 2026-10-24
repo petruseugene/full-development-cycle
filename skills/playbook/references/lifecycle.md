@@ -8,7 +8,7 @@ Plugin paths are relative to `${CLAUDE_PLUGIN_ROOT}`; artefact paths (`docs/feat
 
 Deterministic work runs through `check`, `git …`, `ship`; `dev-cycle:cli-fallback` is the only fallback agent (§1, §7). A PreToolUse hook (`scripts/git-guard.mjs`) denies state-changing git commands from subagents: a guardrail, not a security boundary.
 
-`feature set <key> <value>` (JSON-parsed if it parses, else a string) writes the keys with no other writer: `current_phase`, `current_task_idx`, `task_count`, `branch`, `status` (`blocked|active`), `areas`, `models`, `design_source`, `owner_blocking`; any other key exits 2. Absent `.dev-cycle/project.json` (no profile) ⇒ current behaviour.
+`feature set <key> <value>` (JSON-parsed if it parses, else a string) writes the keys with no other writer: `current_phase`, `current_task_idx`, `task_count`, `branch`, `status` (`blocked|active`), `areas`, `models`, `design_source`, `owner_blocking`, `tdd`; any other key exits 2. Absent `.dev-cycle/project.json` (no profile) ⇒ current behaviour.
 
 ## 1. Lifecycle flows
 
@@ -218,7 +218,7 @@ The track is never asked (selection rules: orchestrator skill); it is written to
 
 ### Project profile (`.dev-cycle/project.json`)
 
-Optional, in the target project root; written by `init [--preset web|expo] [--force]` (no overwrite without `--force`), checked by `profile validate`. All keys optional: `platform` (`web|mobile`); `interview_defaults` (interview keys such as `has_ui`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `owner_blocking`, discovery depth, `design_source`); `commands` (`lint|typecheck|test|format`); `extra_gates` and `post_merge` (`[{name, cmd}]`, post_merge also `confirm`); `enabled_skills` (registry skill names); `guards` (strings); `rules` (`[{globs, text}]`, injected into briefs by glob overlap with a task's Touches); `recipes` (grammar and run rules: `${CLAUDE_PLUGIN_ROOT}/skills/orchestrator/references/recipes.md`).
+Optional, in the target project root; written by `init [--preset web|expo] [--force]` (no overwrite without `--force`), checked by `profile validate`. All keys optional: `platform` (`web|mobile`); `interview_defaults` (interview keys such as `has_ui`, `auto_tests`, `visual_tests`, `a11y_audit`, `dependency_audit`, `security_review`, `release_manage`, `static_check`, `owner_blocking`, `tdd`, discovery depth, `design_source`); `commands` (`lint|typecheck|test|format`); `extra_gates` and `post_merge` (`[{name, cmd}]`, post_merge also `confirm`); `enabled_skills` (registry skill names); `guards` (strings); `rules` (`[{globs, text}]`, injected into briefs by glob overlap with a task's Touches); `recipes` (grammar and run rules: `${CLAUDE_PLUGIN_ROOT}/skills/orchestrator/references/recipes.md`).
 
 `gates/`, `post-merge/`, `content/` logs are committed with the feature folder: commands and recipes must not print secrets; warn the user if one looks like it would.
 
