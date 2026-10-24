@@ -56,7 +56,7 @@ test('AC3: read-only git forms are allowed', () => {
   for (const c of [
     'git status', 'git diff HEAD', 'git log --oneline', 'git show HEAD', 'git branch', 'git branch --list',
     'git branch -a', 'git branch --contains abc', 'git tag', 'git tag -l', 'git stash list', 'git stash show',
-    'git worktree list', 'git rev-parse HEAD', 'git ls-files', 'git add -A', 'git fetch', 'echo git push',
+    'git worktree list', 'git rev-parse HEAD', 'git ls-files', 'git rm', 'git fetch', 'echo git push',
     'grep -r "git commit" .', 'ls',
   ]) allowed(c);
 });

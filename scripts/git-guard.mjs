@@ -10,7 +10,7 @@ import fs from 'node:fs';
 
 const DENY_VERBS = new Set([
   'checkout', 'switch', 'reset', 'restore', 'commit', 'rebase', 'merge', 'clean',
-  'cherry-pick', 'revert', 'am', 'pull', 'push', 'update-ref',
+  'cherry-pick', 'revert', 'am', 'pull', 'push', 'update-ref', 'add', 'stage',
 ]);
 const GLOBAL_WITH_ARG = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--super-prefix', '--config-env']);
 const MAX_DEPTH = 4;
@@ -140,6 +140,7 @@ function check(words, depth, first = false) {
   const args = rest.slice(a + 1);
   if (DENY_VERBS.has(verb)) return verb;
   switch (verb) {
+    case 'rm': return args.some((x) => x === '--cached') ? 'rm --cached' : null;
     case 'stash': return ['list', 'show'].includes(args[0]) ? null : 'stash';
     case 'worktree': return args[0] === 'list' ? null : 'worktree';
     case 'tag': {

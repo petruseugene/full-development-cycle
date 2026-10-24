@@ -86,7 +86,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Rules
 
-- `ship` turns an existing first `## [Unreleased]` heading into the version heading (its old body stays under the new section); otherwise it inserts the section before the first `## ` heading. A missing `CHANGELOG.md` is created with a `# Changelog` header.
+- `ship` turns an existing first `## [Unreleased]` heading into the version heading (its old body stays under the new section); otherwise it inserts the section before the first `## ` heading. A missing `CHANGELOG.md` is created with a `# Changelog` header. When `## [Unreleased]` already has entries and no `--notes-file` is given, they are promoted as-is and no `--subject` bullet is added; an empty Unreleased gets the subject bullet.
 - Subsections only when there is content: `Added`, `Changed`, `Fixed`, `Removed`, `Deprecated`, `Security`. Order them as listed.
 - One bullet per user-visible change. Combine related commits if they map to the same outcome.
 - Voice: present tense, user-facing. "Add email login" not "Added email login functionality for the auth subsystem to support new login flow."

@@ -282,6 +282,17 @@ export function subjectNotes(subject) {
   return `### ${section}\n\n- ${String(subject).split('\n')[0].trim()}\n`;
 }
 
+/** True when the first section is `## [Unreleased]` and its body is not empty. */
+export function unreleasedHasEntries(text) {
+  if (text === null || text === undefined) return false;
+  const lines = text.split('\n');
+  const first = lines.findIndex((l) => /^## /.test(l));
+  if (first === -1 || !/^## \[Unreleased\]\s*$/i.test(lines[first])) return false;
+  let next = lines.findIndex((l, i) => i > first && /^## /.test(l));
+  if (next === -1) next = lines.length;
+  return lines.slice(first + 1, next).join('\n').trim() !== '';
+}
+
 /** Local date as YYYY-MM-DD. */
 export function today(now = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
@@ -298,13 +309,13 @@ export function today(now = new Date()) {
  * @param {string|null} text
  * @param {string} version
  * @param {string} date
- * @param {string} notes  body, inserted verbatim
+ * @param {string} notes  body, inserted verbatim (may be empty: the Unreleased body is promoted as-is)
  */
 export function insertChangelog(text, version, date, notes) {
   if (!VERSION_RE.test(version)) throw new ReleaseError('invalid-version', `'${version}' is not x.y.z`);
   const heading = `## [${version}] — ${date}`;
   const body = String(notes).replace(/\s+$/, '');
-  const section = `${heading}\n\n${body}\n`;
+  const section = body === '' ? `${heading}\n` : `${heading}\n\n${body}\n`;
   if (text === null) return `# Changelog\n\n${section}`;
 
   const lines = text.split('\n');

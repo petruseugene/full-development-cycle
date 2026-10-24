@@ -126,9 +126,9 @@ Before emitting the YAML report:
 
 Fix any failure before reporting `DONE`.
 
-### Step 6 — Stage but do not commit
+### Step 6 — Do not commit
 
-The orchestrator commits. Stage the new/edited files (`git add`) but never run `git commit`.
+The orchestrator stages and commits. Never run `git add` or `git commit`.
 
 ### Step 7 — Report
 

@@ -256,5 +256,5 @@ test('ghAuthPreflight: missing gh binary → auth; GitFailure rejects unknown re
   await assert.rejects(ghAuthPreflight({ env: { ...process.env, DEV_CYCLE_GH: '/nonexistent/gh-binary' } }),
     (err) => err instanceof GitFailure && err.reason === 'auth');
   assert.throws(() => new GitFailure('oops', 'x'), TypeError);
-  assert.equal(GIT_REASONS.length, 12);
+  assert.equal(GIT_REASONS.length, 13);
 });

@@ -1,6 +1,6 @@
 // dev-cycle ship [--release major|minor|patch|auto] [--subject <s>] [--body <b>]
 //                [--notes-file <f>] [--manifest <path>]... [--scope <s>] [--trailer "Key: value"]...
-//                [--closes <n,m>] [--body-footer <text>] [--ci-timeout <s>] [--gh-credential]
+//                [--closes <n,m>] [--include-untracked] [--body-footer <text>] [--ci-timeout <s>] [--gh-credential]
 //
 // One command for the end of a feature. Steps run in order, each printing
 // `ship: <step> ok|skipped`:
@@ -25,7 +25,7 @@ import { evaluateDod } from './dod.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { appendHistory } from './history.mjs';
 import { currentBranch, defaultBranch } from './git-branch.mjs';
-import { commit, polishChangeSet } from './git-commit.mjs';
+import { commit, planStaging, polishChangeSet } from './git-commit.mjs';
 import {
   GIT_COMMON_OPTIONS, GitFailure, execOpts, ghRun, gitOk, gitRun, outputTail,
 } from './git-exec.mjs';
@@ -34,10 +34,10 @@ import { tokenCoverage, tokenCoverageLine } from './token-coverage.mjs';
 import { run as tokensRun } from './cmd-tokens.mjs';
 import {
   LEVELS, ReleaseError, VERSION_RE, agreedVersion, bumpVersion, inferLevel, insertChangelog,
-  loadManifests, readNotesFile, setManifestVersion, subjectNotes, today,
+  loadManifests, readNotesFile, setManifestVersion, subjectNotes, today, unreleasedHasEntries,
 } from './release.mjs';
 
-const USAGE = 'ship [--release major|minor|patch|auto] [--subject <s>] [--body <b>] [--notes-file <f>] [--manifest <path>]... [--scope <s>] [--trailer "Key: value"]... [--closes <n,m>] [--body-footer <text>] [--ci-timeout <s>] [--gh-credential]\n  with --release a non-conventional --subject is prefixed with feat (minor/major) or fix (patch) plus (--scope)';
+const USAGE = 'ship [--release major|minor|patch|auto] [--subject <s>] [--body <b>] [--notes-file <f>] [--manifest <path>]... [--scope <s>] [--trailer "Key: value"]... [--closes <n,m>] [--include-untracked] [--body-footer <text>] [--ci-timeout <s>] [--gh-credential]\n  with --release a non-conventional --subject is prefixed with feat (minor/major) or fix (patch) plus (--scope)';
 const CONVENTIONAL_RE = /^[a-z]+(\([^)\n]*\))?!?: \S/;
 const SHA_RE = /^[0-9a-f]{40}$/;
 const ARROW_RE = /^(\d+\.\d+\.\d+) → (\d+\.\d+\.\d+)$/;
@@ -92,9 +92,10 @@ function releaseStep({ ctx, root, featureDir, values, fj, notesText, messages, r
   const next = bumpVersion(current, level);
   if (!VERSION_RE.test(next)) throw new ReleaseError('invalid-version', next);
 
-  const notes = notesText ?? subjectNotes(subject);
   const changelog = path.join(root, 'CHANGELOG.md');
   const before = readText(changelog, { optional: true });
+  // Unreleased already has entries: promote them as-is, no duplicate subject bullet.
+  const notes = notesText ?? (unreleasedHasEntries(before) ? '' : subjectNotes(subject));
   const after = insertChangelog(before, next, today(), notes);
 
   for (const m of manifests) atomicWrite(m.abs, setManifestVersion(m.abs, m.text, next));
@@ -170,6 +171,7 @@ export async function run(argv, ctx) {
       scope: { type: 'string' },
       trailer: { type: 'string', multiple: true },
       closes: { type: 'string' },
+      'include-untracked': { type: 'boolean' },
       'body-footer': { type: 'string' },
       'ci-timeout': { type: 'string' },
       ...GIT_COMMON_OPTIONS,
@@ -217,17 +219,20 @@ export async function run(argv, ctx) {
 
   const branch = await currentBranch('ship', opts, { allowDefault: true });
   const def = await defaultBranch(opts);
-  const clean = (await gitOk(['status', '--porcelain'], opts)) === '';
+  // Clean = nothing a commit would stage (untracked files left out of scope do not count).
+  const fj = readFeatureJson(featureDir);
+  const polish = (fj.flow ?? 'feature') === 'feature' && fj.track === 'polish';
+  const clean = polish
+    ? (await gitOk(['status', '--porcelain'], opts)) === ''
+    : (await planStaging(featureDir, opts, { includeUntracked: Boolean(values['include-untracked']) })).changed.length === 0;
   const onDefault = branch === def;
   if (onDefault && !clean) {
     throw new UsageError(`ship: on the default branch '${def}' with uncommitted changes; check out the feature branch first`);
   }
   const resume = onDefault && clean; // already merged: only the tag may be left
 
-  const fj = readFeatureJson(featureDir);
   let version = lastReleased(fj);
   let releasePaths = [];
-  const polish = (fj.flow ?? 'feature') === 'feature' && fj.track === 'polish';
 
   try {
     // 1. tokens
@@ -283,7 +288,7 @@ export async function run(argv, ctx) {
     // Polish: only the per-item change set counts (baseline untracked files and ignored bookkeeping do not).
     const nothingToCommit = resume || (polish
       ? (await polishChangeSet(featureDir, opts, { releasePaths })).empty
-      : (await gitOk(['status', '--porcelain'], opts)) === '');
+      : (await planStaging(featureDir, opts, { includeUntracked: Boolean(values['include-untracked']) })).changed.length === 0);
     if (nothingToCommit) {
       mark('commit', 'skipped');
     } else {
@@ -294,6 +299,7 @@ export async function run(argv, ctx) {
       if (values.closes !== undefined) args.push('--closes', values.closes);
       for (const t of values.trailer ?? []) args.push('--trailer', t);
       if (values['gh-credential']) args.push('--gh-credential');
+      if (values['include-untracked']) args.push('--include-untracked');
       await commit([...args, '--feature', featureDir], ctx, { releasePaths });
       mark('commit', 'ok');
     }
