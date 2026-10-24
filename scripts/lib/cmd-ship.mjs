@@ -256,7 +256,7 @@ export async function run(argv, ctx) {
       const tline = tokenCoverageLine(hist);
       if (!dod.passed) {
         if (!json) ctx.stdout.write(`${tline}\n`);
-        return fail(`! DOD-GATE FAILED: ${dod.failed.gate} last status = ${dod.failed.status}; aborting before push.`, { reason: 'dod-failed', failed: dod.failed });
+        return fail(`! DOD-GATE FAILED: ${dod.failed.gate} last status = ${dod.failed.status}; aborting before push.${dod.failed.hint ? ` ${dod.failed.hint}` : ''}`, { reason: 'dod-failed', failed: dod.failed });
       }
       mark('dod', 'ok');
       if (!json) ctx.stdout.write(`${tline}\n`);

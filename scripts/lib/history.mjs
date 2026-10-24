@@ -80,7 +80,7 @@ export function appendHistory(dir, entry) {
   }
   const full = { ts: entry.ts ?? new Date().toISOString(), phase: entry.phase, subagent: entry.subagent, status: entry.status, model: entry.model ?? 'inherit' };
   for (const k of ['duration_s', 'tokens_k', 'summary', 'concerns', 'executor', 'agent_id', 'tokens', 'estimated', 'model_id', 'usd_est', 'usd_unpriced', 'started_at', 'ended_at',
-    'task', 'touches_expanded', 'files', 'conflicts', 'tasks', 'stray', 'mode']) {
+    'resolved_by', 'task', 'touches_expanded', 'files', 'conflicts', 'tasks', 'stray', 'mode']) {
     if (entry[k] !== undefined) full[k] = entry[k];
   }
   updateFeatureJson(dir, (fj) => {

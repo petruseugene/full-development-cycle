@@ -74,6 +74,55 @@ export function lastStatus(history, gate) {
   return status;
 }
 
+const IMPLEMENT_GATE_RE = /^implement(\.task=\d+|\.area=[a-z0-9][a-z0-9-]*)?$/;
+
+/** True for implement-phase gate keys: `implement`, `implement.task=N`, `implement.area=X`. */
+export function isImplementGate(gate) {
+  return typeof gate === 'string' && IMPLEMENT_GATE_RE.test(gate);
+}
+
+const CONCERN_MAX = 160;
+
+/**
+ * Gate state with concern resolution. For implement-phase gates a last status
+ * of DONE_WITH_CONCERNS passes when a later `review` entry is APPROVED
+ * (`resolved by review <ts>`), and an explicit RESOLVED entry (written by
+ * `history resolve`) passes. Other gates: PASS_SET on the last status.
+ * @returns {{status: string, pass: boolean, note?: string, concern?: string}}
+ */
+export function gateState(history, gate) {
+  const list = Array.isArray(history) ? history : [];
+  let idx = -1;
+  for (let i = 0; i < list.length; i++) {
+    const e = list[i];
+    if (e && e.phase === gate && typeof e.status === 'string') idx = i;
+  }
+  if (idx === -1) return { status: 'MISSING', pass: false };
+  const entry = list[idx];
+  const status = entry.status;
+  if (!isImplementGate(gate)) return { status, pass: PASS_SET.has(status) };
+  if (status === 'RESOLVED') {
+    return { status, pass: true, note: `resolved by ${typeof entry.resolved_by === 'string' ? entry.resolved_by : 'owner'} ${entry.ts ?? ''}`.trim() };
+  }
+  if (status === 'DONE_WITH_CONCERNS') {
+    for (let i = idx + 1; i < list.length; i++) {
+      const r = list[i];
+      if (r && r.phase === 'review' && r.status === 'APPROVED') {
+        return { status, pass: true, note: `resolved by review ${r.ts ?? ''}`.trim() };
+      }
+    }
+    const text = String(entry.concerns ?? '').replace(/\s+/g, ' ').trim();
+    const concern = Array.from(text).length > CONCERN_MAX ? `${Array.from(text).slice(0, CONCERN_MAX - 1).join('')}…` : text;
+    return { status, pass: false, concern };
+  }
+  return { status, pass: PASS_SET.has(status) };
+}
+
+/** One-line failure hint for an unresolved DONE_WITH_CONCERNS implement gate. */
+export function concernHint(gate, concern) {
+  return `concern: ${concern || '(none recorded)'}; resolve with: history resolve --phase ${gate} --by review|owner|fix --note "<text>"`;
+}
+
 /**
  * `spec analyze` counts for a feature folder. Read-only; a malformed input
  * (UsageError) is reported as `malformed` and counts as failing.
@@ -108,7 +157,7 @@ export function polishItemsStatus(dir) {
  * subset in the same order, so `needs[0]` is the gate dod fails on.
  * @param {string} dir
  * @returns {{passed: boolean, required: string[], checks: {gate: string, status: string, pass: boolean}[],
- *   needs: {gate: string, status: string}[], failed?: {gate: string, status: string}}}
+ *   needs: {gate: string, status: string}[], failed?: {gate: string, status: string, hint?: string}}}
  */
 export function dodReport(dir) {
   const fj = readFeatureJson(dir);
@@ -140,17 +189,20 @@ export function dodReport(dir) {
   }
   for (const gate of required) {
     // owner.task gates come from the tasks source status, never history.
-    const status = ownerStatus.has(gate) ? ownerStatus.get(gate) : lastStatus(fj.history, gate);
-    add(gate, status, PASS_SET.has(status));
+    if (ownerStatus.has(gate)) { add(gate, ownerStatus.get(gate), PASS_SET.has(ownerStatus.get(gate))); continue; }
+    const g = gateState(fj.history, gate);
+    add(gate, g.status, g.pass);
+    if (g.note) checks[checks.length - 1].note = g.note;
+    if (g.concern !== undefined) checks[checks.length - 1].hint = concernHint(gate, g.concern);
   }
-  const needs = checks.filter((c) => !c.pass).map(({ gate, status }) => ({ gate, status }));
+  const needs = checks.filter((c) => !c.pass).map(({ gate, status, hint }) => ({ gate, status, ...(hint ? { hint } : {}) }));
   return { passed: needs.length === 0, required, checks, needs, ...(needs.length ? { failed: needs[0] } : {}) };
 }
 
 /**
  * Evaluate the gate for a feature folder.
  * @param {string} dir
- * @returns {{passed: boolean, required: string[], failed?: {gate: string, status: string}}}
+ * @returns {{passed: boolean, required: string[], failed?: {gate: string, status: string, hint?: string}}}
  */
 export function evaluateDod(dir) {
   const { passed, required, failed } = dodReport(dir);

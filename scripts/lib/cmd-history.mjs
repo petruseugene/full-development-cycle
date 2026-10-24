@@ -5,11 +5,33 @@ import { agentTimeRange, agentUsage, configRoot, normIso, validateAgentId, valid
 import { estimateUsd } from './prices.mjs';
 import { loadProfile } from './profile.mjs';
 import { NO_AGENT_ID_MESSAGE, isDispatchedEntry } from './token-coverage.mjs';
+import { sanitizeItemText } from './polish.mjs';
+import { gateState, isImplementGate } from './dod.mjs';
+import { readFeatureJson } from './feature-json.mjs';
 import { appendHistory, isValidPhase, parseDuration, parseTokens } from './history.mjs';
 
-const USAGE = 'history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]';
+const USAGE = 'history resolve --phase <implement gate> --by review|owner|fix --note <text>\n  history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]';
 
 function pick(o, keys) { return Object.fromEntries(keys.map((k) => [k, o[k]])); }
+
+const BY = ['review', 'owner', 'fix'];
+const NOTE_MAX = 300;
+
+function resolve(values, ctx) {
+  const { phase } = values;
+  if (!isImplementGate(phase)) throw new UsageError(`history resolve: --phase must be an implement gate (implement, implement.task=<n>, implement.area=<name>), got '${phase}'`);
+  if (!BY.includes(values.by)) throw new UsageError(`history resolve: --by must be one of ${BY.join('|')}`);
+  const note = sanitizeItemText(values.note ?? '', NOTE_MAX);
+  if (note === '') throw new UsageError('history resolve: --note is required (non-empty after sanitizing)');
+  const dir = resolveFeatureDir(ctx, values);
+  const st = gateState(readFeatureJson(dir).history, phase);
+  if (st.status !== 'DONE_WITH_CONCERNS') {
+    throw new UsageError(`history resolve: ${phase} last status is ${st.status}; only DONE_WITH_CONCERNS can be resolved`);
+  }
+  // executor 'cli' keeps it out of totals (calls, time, tokens): not an implementer run.
+  const added = appendHistory(dir, { phase, subagent: 'orchestrator', status: 'RESOLVED', executor: 'cli', summary: note, resolved_by: values.by });
+  output(ctx, values, { text: `history: ${added.phase} orchestrator RESOLVED (by ${values.by})`, data: { added } });
+}
 
 export async function run(argv, ctx) {
   const { values, args } = parseCommandArgs(argv, {
@@ -17,8 +39,10 @@ export async function run(argv, ctx) {
     positionals: ['verb'],
     options: {
       phase: { type: 'string', required: true },
-      subagent: { type: 'string', required: true },
-      status: { type: 'string', required: true },
+      subagent: { type: 'string' },
+      status: { type: 'string' },
+      by: { type: 'string' },
+      note: { type: 'string' },
       model: { type: 'string' },
       duration: { type: 'string' },
       tokens: { type: 'string' },
@@ -28,8 +52,10 @@ export async function run(argv, ctx) {
       session: { type: 'string' },
     },
   });
+  if (args.verb === 'resolve') return resolve(values, ctx);
   if (args.verb !== 'add') throw new UsageError(`unknown history verb '${args.verb}' (usage: dev-cycle ${USAGE})`);
   if (!isValidPhase(values.phase)) throw new UsageError(`invalid --phase '${values.phase}'`);
+  for (const k of ['subagent', 'status']) if (values[k] === undefined) throw new UsageError(`history add: --${k} is required (usage: dev-cycle ${USAGE})`);
 
   const entry = { phase: values.phase, subagent: values.subagent, status: values.status };
   if (values.model) entry.model = values.model;

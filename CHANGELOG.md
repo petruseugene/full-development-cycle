@@ -3,6 +3,16 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.11] — 2026-10-24
+
+### Fixed
+
+- fix(dod): resolved concerns no longer block the gate
+
+### Fixed
+
+- fix(dod): `DONE_WITH_CONCERNS` on an implement gate no longer blocks dod forever. It counts as resolved by a later APPROVED `review` entry, or by the new `history resolve --phase <gate> --by review|owner|fix --note <text>` verb (writes a `RESOLVED` entry that is not a run in totals or the timeline); the failure message now names the concern and the resolve command (#8)
+
 ## [1.7.10] — 2026-10-24
 
 ### Added

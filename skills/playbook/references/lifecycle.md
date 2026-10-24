@@ -241,7 +241,7 @@ The single `phase: "orchestrator"` entry (`subagent: "orchestrator"`, `executor:
 | Reported status | Orchestrator action |
 |---|---|
 | `DONE` | Mark task `[DONE]` (or advance phase), continue |
-| `DONE_WITH_CONCERNS` | Log concern in `feature.json` history, continue |
+| `DONE_WITH_CONCERNS` | Log concern, continue; later APPROVED review / `history resolve` clears dod |
 | `NEEDS_CONTEXT` | Re-dispatch same subagent with the missing context |
 | `BLOCKED` | Mark `[BLOCKED]`, escalate to user with blocker text |
 | `APPROVED` (reviewer) | Advance to ship |
@@ -258,8 +258,8 @@ The single `phase: "orchestrator"` entry (`subagent: "orchestrator"`, `executor:
 | `PASSED` (dod-gate) | `ship` (§1 step 13) |
 | `FAILED` (dod-gate) | One-line escalation naming the gate; abort before push |
 | `git`/`ship` reason `conflict`, `not-mergeable`, `push-rejected` | Dispatch `dev-cycle:cli-fallback` (git mode) with the `FAILED …` line |
-| reason `hook-failed` | Hook output needs a code fix → implementer fix loop first, then retry the commit; `dev-cycle:cli-fallback` only if it still fails |
-| reason `auth`, `main-ahead`, `ci-failing`, `ci-pending`, `dod-failed`, `secret-like-file` | Escalate to the user in one line (reason + detail); no agent |
+| reason `hook-failed` | Hook output needs a code fix → implementer fix loop, retry the commit; `dev-cycle:cli-fallback` only if it still fails |
+| reason `auth`, `main-ahead`, `ci-failing`, `ci-pending`, `dod-failed`, `secret-like-file` | Escalate in one line (reason + detail); no agent |
 | reason `timeout` | Retry once (`--gh-credential` if the keychain helper may hang); then escalate |
 | reason `nothing-to-commit` | Escalate in one line; no agent |
 
