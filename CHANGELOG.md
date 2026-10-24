@@ -3,6 +3,14 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.13] — 2026-10-24
+
+### Fixed
+
+- `git commit` and `ship` now unstage already-staged paths that match `git.never_stage` (also with `--include-untracked`) instead of only counting them; the working tree is untouched and a note reports "N staged files matching git.never_stage were unstaged"
+- `git.never_stage` and Touches matching no longer rewrite leading dots (`src/_x` used to match `src/.x`); globs are compiled so `*` and `**` match dot-segments without altering the path
+- `git-guard` now also denies `git mv`, `git update-index` and `git apply --cached` / `--index` for subagents; plain `git apply` and `git rm` stay allowed
+
 ## [1.7.12] — 2026-10-24
 
 ### Fixed

@@ -11,7 +11,43 @@ import fs from 'node:fs';
 const DENY_VERBS = new Set([
   'checkout', 'switch', 'reset', 'restore', 'commit', 'rebase', 'merge', 'clean',
   'cherry-pick', 'revert', 'am', 'pull', 'push', 'update-ref', 'add', 'stage',
+  'mv', 'update-index',
 ]);
+// Long options of `git apply` / `git rm`: git accepts any unique prefix, so a prefix of a
+// target option that is not a prefix of another option is treated as that option.
+const APPLY_OPTS = ['stat', 'numstat', 'summary', 'check', 'index', 'cached', 'intent-to-add', '3way', 'apply', 'no-add',
+  'build-fake-ancestor', 'reverse', 'allow-binary-replacement', 'binary', 'reject', 'inaccurate-eof', 'recount', 'directory',
+  'unsafe-paths', 'exclude', 'include', 'ignore-space-change', 'ignore-whitespace', 'whitespace', 'verbose', 'quiet',
+  'unidiff-zero', 'allow-overlap'];
+const RM_OPTS = ['dry-run', 'quiet', 'cached', 'force', 'ignore-unmatch', 'sparse', 'pathspec-from-file', 'pathspec-file-nul'];
+
+function hasLongOpt(args, all, targets) {
+  for (const x of args) {
+    if (x === '--') return false;
+    if (!x.startsWith('--')) continue;
+    const name = x.slice(2).split('=')[0];
+    if (!name) continue;
+    for (const t of targets) {
+      if (name === t) return true;
+      if (t.startsWith(name) && !all.some((o) => o !== t && o.startsWith(name))) return true;
+    }
+  }
+  return false;
+}
+
+// Short-option clusters (`-3v`): scan flags until one that takes a value (-p, -C).
+function hasShortFlag(args, flags) {
+  for (const x of args) {
+    if (x === '--') return false;
+    if (!/^-[^-]/.test(x)) continue;
+    for (const ch of x.slice(1)) {
+      if (ch === 'p' || ch === 'C') break;
+      if (flags.includes(ch)) return true;
+    }
+  }
+  return false;
+}
+
 const GLOBAL_WITH_ARG = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--super-prefix', '--config-env']);
 const MAX_DEPTH = 4;
 
@@ -140,7 +176,9 @@ function check(words, depth, first = false) {
   const args = rest.slice(a + 1);
   if (DENY_VERBS.has(verb)) return verb;
   switch (verb) {
-    case 'rm': return args.some((x) => x === '--cached') ? 'rm --cached' : null;
+    case 'apply':
+      return hasLongOpt(args, APPLY_OPTS, ['cached', 'index', '3way', 'intent-to-add']) || hasShortFlag(args, ['3', 'N']) ? 'apply --cached' : null;
+    case 'rm': return hasLongOpt(args, RM_OPTS, ['cached']) ? 'rm --cached' : null;
     case 'stash': return ['list', 'show'].includes(args[0]) ? null : 'stash';
     case 'worktree': return args[0] === 'list' ? null : 'worktree';
     case 'tag': {

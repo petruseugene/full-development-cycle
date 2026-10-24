@@ -185,3 +185,29 @@ test('#43: glued redirects are split off the word', () => {
   for (const c of ['git status>/dev/null', 'git stash list 2>/dev/null', 'git tag 2>&1', 'git branch >out.txt', 'git log 2>&1 | head', 'git diff <file']) allowed(c);
   denied('git status >/dev/null; git stash>/dev/null');
 });
+
+test('git mv, update-index and apply --cached/--index are denied for subagents', () => {
+  for (const c of [
+    'git mv a b', 'git -C x mv a b', 'git update-index --assume-unchanged f', 'git update-index --add f',
+    'git apply --cached p.patch', 'git apply --index p.patch', 'git apply -v --cached p', 'git apply --index=1 p',
+    'echo hi && git mv a b', 'sh -c "git update-index --refresh"', 'FOO=1 git apply --cached p',
+  ]) denied(c);
+});
+
+test('plain git apply and git rm without --cached stay allowed', () => {
+  for (const c of ['git apply p.patch', 'git apply --check p.patch', 'git apply --stat p', 'git rm f', 'git rm -r dir', 'git diff --cached']) allowed(c);
+});
+
+test('auto-tester: guard flag position, env wrapper and -C forms', () => {
+  for (const c of ['git -C d mv a b', 'git apply --index=foo p.patch', 'git apply p.patch --cached', 'git apply p.patch --index', 'env git update-index --assume-unchanged f']) denied(c);
+  for (const c of ['git apply p.patch', 'git rm f', 'env git apply p.patch']) allowed(c);
+});
+
+test('F7/F8: --3way, -3, abbreviated options and clusters are denied; ambiguous/benign ones allowed', () => {
+  for (const c of [
+    'git apply --3way p', 'git apply -3 p', 'git apply -3v p', 'git apply --3 p', 'git apply --cach p', 'git apply --ca p',
+    'git apply --ind p', 'git apply --inde=1 p', 'git apply -N p', 'git apply --intent-to-add p', 'git apply --intent p',
+    'git rm --cach f', 'git rm --c f', 'git rm -r --cached f',
+  ]) denied(c);
+  for (const c of ['git apply --c p', 'git apply --check p', 'git apply -p1 p', 'git apply -v p', 'git rm --force f', 'git rm -f f', 'git apply -- --cached']) allowed(c);
+});
