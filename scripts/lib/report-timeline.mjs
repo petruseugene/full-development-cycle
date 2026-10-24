@@ -37,6 +37,7 @@ export function buildTimeline(history, { tasks } = {}) {
   const entries = [];
   (Array.isArray(history) ? history : []).forEach((e, index) => {
     if (!e || typeof e !== 'object') return;
+    if (e.status === 'RESOLVED') return; // concern resolution marker, not a run
     if (e.phase === 'worktree') return; // bookkeeping; shown as worktree rows, not bars
     const t = timingOf(e);
     if (!t) return;
@@ -76,7 +77,7 @@ export function buildTimeline(history, { tasks } = {}) {
   const seen = new Map();
   const fix_cycles = [];
   for (const e of Array.isArray(history) ? history : []) {
-    if (!e || typeof e.phase !== 'string' || !/^implement(\.|$)/.test(e.phase)) continue;
+    if (!e || e.status === 'RESOLVED' || typeof e.phase !== 'string' || !/^implement(\.|$)/.test(e.phase)) continue;
     const k = (seen.get(e.phase) ?? 0) + 1;
     seen.set(e.phase, k);
     if (k < 2) continue;

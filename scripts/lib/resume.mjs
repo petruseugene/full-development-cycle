@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { budgetCheck, budgetLine } from './budget.mjs';
 import { UsageError, output, parseCommandArgs, resolveFeatureDir } from './core.mjs';
 import { parseOpenDecisions } from './decisions.mjs';
-import { dodReport, lastStatus, specAnalyzeCounts } from './dod.mjs';
+import { dodReport, gateState, lastStatus, specAnalyzeCounts } from './dod.mjs';
 import { readFeatureJson } from './feature-json.mjs';
 import { isOwnerTask, parsePlan, tasksSource } from './plan.mjs';
 import { isDeferred, readPolish } from './polish.mjs';
@@ -96,6 +96,11 @@ function nextLines({ fj, dir, report, decisions, quickish }) {
   return out.slice(0, MAX_NEXT);
 }
 
+function shown(history, gate) {
+  const g = gateState(history, gate);
+  return g.note ? `${g.status} (${g.note})` : g.status;
+}
+
 export function buildResume(dir) {
   const fj = readFeatureJson(dir);
   const history = Array.isArray(fj.history) ? fj.history : [];
@@ -115,9 +120,9 @@ export function buildResume(dir) {
     ? { done: regular.length - openRegular.length, total: regular.length, open: openRegular.map((t) => ({ n: t.n, status: t.status, title: t.title })) }
     : null;
   const areas = effTrack === 'lite' || effTrack === 'polish'
-    ? (Array.isArray(fj.areas) ? fj.areas : []).filter((a) => a?.name).map((a) => ({ name: a.name, status: lastStatus(history, `implement.area=${a.name}`) }))
+    ? (Array.isArray(fj.areas) ? fj.areas : []).filter((a) => a?.name).map((a) => ({ name: a.name, status: shown(history, `implement.area=${a.name}`) }))
     : null;
-  const implement = effTrack === 'quick' ? lastStatus(history, 'implement') : null;
+  const implement = effTrack === 'quick' ? shown(history, 'implement') : null;
   const gates = report.required
     .filter((g) => !g.startsWith('implement') && !g.startsWith('owner.task='))
     .map((g) => ({ gate: g, status: lastStatus(history, g) }));

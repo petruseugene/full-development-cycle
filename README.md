@@ -290,6 +290,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `spec analyze [--json]` | Read-only: report spec, task and coverage inconsistencies (errors exit 1, warnings exit 0) |
 | `spec decisions [--json]` | Read-only: list the `## Open decisions` of `spec.md` (exit 2 on a malformed block) |
 | `history add --phase <p> --subagent <s> --status <st> [--model m] [--duration d] [--tokens t] [--summary s] [--concerns c] [--agent-id id] [--session id]` | Append a history entry; measured usage is attached when an agent id is given; a dispatched subagent without `--agent-id` prints a `no --agent-id` warning (exit 2 under `strict_tokens`) |
+| `history resolve --phase <implement gate> --by review\|owner\|fix --note <text>` | Resolve a `DONE_WITH_CONCERNS` implement gate: appends a `RESOLVED` entry (no tokens, not a run in totals or the timeline) so dod passes; a later `APPROVED` review resolves it automatically |
 | `groups [--all]` | Compute parallel groups from `Touches` and `Depends on` |
 | `map [--check] [--force] [--json]` | Write or refresh the committed `.dev-cycle/map.md` from tracked files (`--check` is read-only; exit 1 when stale) |
 | `context [--touches g,..] [--json]` | Read-only: print the lessons block for the globs plus the project-map slice (at most 2 KB) for a lite or quick prompt |

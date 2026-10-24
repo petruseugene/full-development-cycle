@@ -33,9 +33,17 @@ The pass set is closed:
 { "DONE", "APPROVED", "PASSED" }
 ```
 
-`DONE_WITH_CONCERNS` does **not** pass — the orchestrator must have
-either resolved the concern (advancing the gate to `DONE`) or escalated
-before reaching dod-gate. `NEEDS_CONTEXT`, `BLOCKED`, `CHANGES_REQUIRED`,
+`DONE_WITH_CONCERNS` does **not** pass on its own. For implement-phase gates
+(`implement`, `implement.task=<n>`, `implement.area=<name>`) it counts as
+resolved when a later `review` entry is `APPROVED` (dod prints
+`<gate>: resolved by review <ts>`), or after
+`history resolve --phase <gate> --by review|owner|fix --note "<text>"`, which
+writes a `RESOLVED` entry (logged by the CLI, no tokens, not a run in
+totals or timeline; accepted for implement-phase gates only, and only while the
+gate's last status is `DONE_WITH_CONCERNS`). Any other gate with
+`DONE_WITH_CONCERNS` must be advanced to `DONE` or escalated. An unresolved
+implement concern fails with the concern text and the resolve command.
+`NEEDS_CONTEXT`, `BLOCKED`, `CHANGES_REQUIRED`,
 and `FAILED` never pass.
 
 ## Required gates
