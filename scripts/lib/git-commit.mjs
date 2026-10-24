@@ -11,7 +11,8 @@
 // 3. Flow `feature`: snapshot spec.md, the tasks file and feature.json bytes,
 //    then flip IMPL-DONE → DONE (non-owner tasks), spec (and plan) frontmatter
 //    → DONE, append the `git` "feature commit" history entry, and re-stage.
-// 4. `git commit -F <tmpfile>` (never through a shell). On any failure every
+// 4. `git commit -F <tmpfile>` (never through a shell). On any failure the never_stage paths
+//    unstaged in step 2 get their original index entries back, and every
 //    snapshot is restored byte-for-byte and re-staged (the flips are unstaged):
 //    hook failure → `hook-failed` with the output tail.
 // 5. On success print the new HEAD SHA.
@@ -80,19 +81,70 @@ export const UNTRACKED_MAX_FILES = 20;
 export const UNTRACKED_MAX_BYTES = 10 * 1024 * 1024;
 const STAGE_CHUNK = 200;
 
-/** True when `p` matches a project-root-relative glob (`dir/` means everything under it). */
-function globMatch(p, glob) {
-  const g = glob.endsWith('/') ? `${glob}**` : glob;
-  const test = (x) => { try { return path.posix.matchesGlob(x, g); } catch { return false; } };
-  // matchesGlob never lets `*`/`**` match dot-files: also try the path with leading dots masked.
-  return test(p) || test(maskDots(p));
+/** Index of the `]` closing the bracket class opened at `i`, or -1 (a leading `]` is a literal member). */
+function classEnd(glob, i) {
+  let k = i + 1;
+  if (glob[k] === '!' || glob[k] === '^') k++;
+  if (glob[k] === ']') k++;
+  return glob.indexOf(']', k);
 }
 
-/** Replace a leading `.` of every path segment so wildcards can match dot-files. */
-const maskDots = (p) => p.split('/').map((s) => (s.startsWith('.') ? `_${s.slice(1)}` : s)).join('/');
+/**
+ * Compile a glob to a RegExp where `*`, `?` and `**` also match segments that start
+ * with `.` (path.matchesGlob never does). The path is matched as-is, never rewritten.
+ * Supports `**`, `*`, `?`, `[...]` and `{a,b}`.
+ */
+function compileGlob(rawGlob) {
+  // Runs of `**/` are equivalent to one; collapsing them bounds regex backtracking.
+  const glob = rawGlob.replace(/(?:(?<=^|\/)\*\*\/)+/g, '**/');
+  // Only balanced braces are alternations; an unbalanced `{`, `}` or `,` is literal.
+  const opens = new Set();
+  const closes = new Set();
+  const stack = [];
+  for (let i = 0; i < glob.length; i++) {
+    if (glob[i] === '\\') { i++; continue; }
+    if (glob[i] === '[') { const j = classEnd(glob, i); if (j > 0) i = j; continue; }
+    if (glob[i] === '{') stack.push(i);
+    else if (glob[i] === '}' && stack.length) { opens.add(stack.pop()); closes.add(i); }
+  }
+  const esc = (ch) => ch.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  let re = '';
+  let depth = 0;
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        const segStart = i === 0 || glob[i - 1] === '/';
+        let j = i;
+        while (glob[j + 1] === '*') j++;
+        if (segStart && glob[j + 1] === '/') { re += '(?:[^/]+/)*'; i = j + 1; } else if (segStart && j + 1 === glob.length) { re += '.*'; i = j; } else { re += '[^/]*'; i = j; }
+      } else re += '[^/]*';
+    } else if (c === '?') re += '[^/]';
+    else if (c === '[') {
+      const neg = glob[i + 1] === '!' || glob[i + 1] === '^';
+      const j = classEnd(glob, i);
+      if (j < 0) re += '\\[';
+      else {
+        let body = glob.slice(i + 1 + (neg ? 1 : 0), j);
+        if (body[0] === ']') body = `\\]${body.slice(1)}`;
+        body = body.replace(/\\(?!\])/g, '\\\\');
+        re += `(?!/)[${neg ? '^' : ''}${body}]`; i = j;
+      }
+    } else if (c === '{' && opens.has(i)) { depth++; re += '(?:'; } else if (c === '}' && closes.has(i)) { depth--; re += ')'; } else if (c === ',' && depth > 0) re += '|';
+    else if (c === '\\' && i + 1 < glob.length) re += esc(glob[++i]);
+    else re += esc(c);
+  }
+  return new RegExp(`^${re}$`);
+}
+
+/** True when `p` matches a project-root-relative glob (`dir/` means everything under it), dot-files included. */
+export function globMatch(p, glob) {
+  const g = glob.endsWith('/') ? `${glob}**` : glob;
+  try { return compileGlob(g).test(p); } catch { return false; }
+}
 
 /** True when `p` falls under (or equals) a Touches glob, dot-files included. */
-const inTouches = (p, touches) => touches.some((t) => globsOverlap(p, t) || globsOverlap(maskDots(p), t));
+const inTouches = (p, touches) => touches.some((t) => globsOverlap(p, t) || globMatch(p, t));
 
 const humanSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : n >= 1024 ? `${Math.round(n / 1024)} KB` : `${n} B`);
 
@@ -148,11 +200,16 @@ export async function planStaging(featureDir, opts, { includeUntracked = false }
   const untracked = [];
   const leftOut = [];
   let blocked = 0;
+  const unstage = []; // already-staged paths matching git.never_stage
   const sizes = new Map();
   for (const e of parseStatus(st.stdout)) {
     if (e.xy === 'AD') continue; // staged-then-deleted: nothing left to stage
     const p = toPosix(path.relative(root, path.join(gitTop, e.path)));
-    if (never.some((g) => globMatch(p, g))) { blocked++; continue; }
+    if (never.some((g) => globMatch(p, g))) {
+      blocked++;
+      if (e.xy !== '??' && e.xy[0] !== ' ') unstage.push(p);
+      continue;
+    }
     if (e.xy !== '??') {
       changed.push(p);
       // Worktree side clean (`git rm`, `git mv` results): already staged, `git add` would fail on it.
@@ -173,7 +230,7 @@ export async function planStaging(featureDir, opts, { includeUntracked = false }
   const bytes = untracked.reduce((a, p) => a + (sizes.get(p) ?? 0), 0);
   const large = touches.length === 0 && !includeUntracked
     && (untracked.length > UNTRACKED_MAX_FILES || bytes > UNTRACKED_MAX_BYTES);
-  return { root, stage, changed, untracked, leftOut, blocked, sizes, bytes, large, touches: touches.length > 0 };
+  return { root, stage, changed, untracked, leftOut, blocked, unstage, sizes, bytes, large, touches: touches.length > 0 };
 }
 
 /** Stage explicit root-relative paths (literal pathspecs, chunked). */
@@ -193,6 +250,47 @@ function stagingNotes(plan, ctx) {
     const shown = plan.leftOut.slice(0, 10);
     for (const l of groupLines(plan.leftOut, plan.sizes)) ctx.stderr.write(`${l}\n`);
     ctx.stderr.write(`  e.g. ${shown.join(', ')}${plan.leftOut.length > shown.length ? ', …' : ''}\n`);
+  }
+}
+
+/**
+ * Unstage explicit root-relative paths, leaving the working tree untouched:
+ * `git reset -q -- <paths>`, or `git rm --cached` when HEAD does not exist yet.
+ */
+async function unstagePaths(paths, opts, root) {
+  const o = { ...opts, cwd: root, env: { ...(opts.env ?? process.env), GIT_LITERAL_PATHSPECS: '1' } };
+  const head = await gitRun(['rev-parse', '--verify', '--quiet', 'HEAD'], o);
+  for (let i = 0; i < paths.length; i += STAGE_CHUNK) {
+    const chunk = paths.slice(i, i + STAGE_CHUNK);
+    const r = head.code === 0
+      ? await gitRun(['reset', '-q', '--', ...chunk], o)
+      : await gitRun(['rm', '-q', '--cached', '-f', '--ignore-unmatch', '--', ...chunk], o);
+    if (r.code !== 0) throw new GitPlumbingError(`git plumbing failed — git ${head.code === 0 ? 'reset' : 'rm --cached'}: ${outputTail(r.stderr || r.stdout, 10) || `exit ${r.code}`}`);
+  }
+}
+
+/** Index entries (stage 0) of `paths`: Map path → "mode,sha"; used to restore staging on failure. */
+async function indexEntries(paths, opts, root) {
+  const o = { ...opts, cwd: root, env: { ...(opts.env ?? process.env), GIT_LITERAL_PATHSPECS: '1' } };
+  const entries = new Map();
+  for (let i = 0; i < paths.length; i += STAGE_CHUNK) {
+    const r = await gitRun(['ls-files', '-s', '-z', '--', ...paths.slice(i, i + STAGE_CHUNK)], o);
+    if (r.code !== 0) throw new GitPlumbingError(`git plumbing failed — git ls-files: ${outputTail(r.stderr || r.stdout, 10) || `exit ${r.code}`}`);
+    for (const rec of r.stdout.split('\0').filter(Boolean)) {
+      const m = /^(\d+) ([0-9a-f]+) (\d)\t([\s\S]*)$/.exec(rec);
+      if (m && m[3] === '0') entries.set(m[4], `${m[1]},${m[2]}`);
+    }
+  }
+  return entries;
+}
+
+/** Put the captured index entries back (paths absent from `entries` were staged deletions). Best effort. */
+async function restoreIndex(paths, entries, opts, root) {
+  const o = { ...opts, cwd: root, env: { ...(opts.env ?? process.env), GIT_LITERAL_PATHSPECS: '1' } };
+  for (const p of paths) {
+    const e = entries.get(p);
+    if (e) await gitRun(['update-index', '--add', '--cacheinfo', `${e},${p}`], o);
+    else await gitRun(['rm', '-q', '--cached', '-f', '--ignore-unmatch', '--', p], o);
   }
 }
 
@@ -254,6 +352,17 @@ function applyFlips(featureDir, { polish = false } = {}) {
  * @param {import('./core.mjs').CliContext} ctx
  */
 export async function commit(argv, ctx, internal = {}) {
+  const undo = { restore: null };
+  try {
+    return await commitInner(argv, ctx, internal, undo);
+  } catch (err) {
+    // The commit failed after never_stage paths were unstaged: put the user's staging back.
+    if (undo.restore) await undo.restore().catch(() => {});
+    throw err;
+  }
+}
+
+async function commitInner(argv, ctx, internal, undo) {
   const { values } = parseCommandArgs(argv, {
     usage: USAGE,
     options: {
@@ -294,6 +403,13 @@ export async function commit(argv, ctx, internal = {}) {
   if (plan.large) {
     throw new GitFailure('untracked-large', `${plan.untracked.length} new untracked files, ${humanSize(plan.bytes)} (limit ${UNTRACKED_MAX_FILES} files / ${humanSize(UNTRACKED_MAX_BYTES)}); nothing staged. Untracked additions:\n${groupLines(plan.untracked, plan.sizes).join('\n')}\nMove them out, add them to git.never_stage, or pass --include-untracked`);
   }
+  if (plan.unstage.length) {
+    const entries = await indexEntries(plan.unstage, opts, plan.root);
+    // Armed first: a failure on a later chunk must still restore the earlier ones (restore is idempotent).
+    undo.restore = () => restoreIndex(plan.unstage, entries, opts, plan.root);
+    await unstagePaths(plan.unstage, opts, plan.root);
+    ctx.stderr.write(`git commit: ${plan.unstage.length} staged files matching git.never_stage were unstaged\n`);
+  }
   await stagePaths(plan.stage, opts, plan.root);
   // `docs/features/` may be git-ignored (a repo that keeps its feature folders local):
   // the status flips still happen on disk but are never staged.
@@ -302,6 +418,7 @@ export async function commit(argv, ctx, internal = {}) {
 
   const secrets = (await stagedPaths(opts, 'd')).filter(isSecretLike);
   if (secrets.length) {
+    undo.restore = null; // everything is unstaged here by design
     await unstageAll(opts);
     throw new GitFailure('secret-like-file', `refusing to commit secret-like file(s): ${secrets.join(', ')}; unstaged everything`);
   }
