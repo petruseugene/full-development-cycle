@@ -1,0 +1,37 @@
+{
+  "name": "dev-cycle-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "NEXT_TELEMETRY_DISABLED=1 next dev -H 127.0.0.1 -p 3737",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "start": "NEXT_TELEMETRY_DISABLED=1 next start -H 127.0.0.1 -p 3737",
+    "lint": "next lint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "~0.3.142",
+    "@types/dompurify": "~3.2.0",
+    "@types/node": "20.12.7",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "chokidar": "3.6.0",
+    "dompurify": "~3.4.3",
+    "gray-matter": "4.0.3",
+    "marked": "~18.0.3",
+    "next": "^14.2.35",
+    "postcss": "8.4.38",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "3.4.4",
+    "typescript": "5.4.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^25.0.1",
+    "vitest": "^3.2.4"
+  }
+}

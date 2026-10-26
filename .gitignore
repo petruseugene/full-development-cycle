@@ -6,7 +6,7 @@
 # Claude Code local-only files
 .claude/settings.local.json
 
-# Node (root-level; dashboard/ has its own)
+# Node (root-level; plugin/dashboard/ has its own)
 node_modules/
 .next/
 
@@ -16,7 +16,7 @@ build/
 *.log
 
 # Dashboard Agent SDK runtime (session metadata, NDJSON event logs, stats snapshots)
-dashboard/.runtime/
+plugin/dashboard/.runtime/
 
 # Local dev-cycle artefacts of this repo; not published
 docs/features/
@@ -25,3 +25,8 @@ docs/superpowers/
 # Superpowers brainstorm mockups + visual-companion state
 .superpowers/
 .playwright-mcp/
+
+# Env files (Next.js loads .env*); the example is tracked
+.env
+.env.*
+!.env.example

@@ -11,7 +11,7 @@
       "name": "dev-cycle",
       "description": "Takes any feature or bugfix from idea to merged PR through strict subagent orchestration.",
       "category": "workflow",
-      "source": "./"
+      "source": "./plugin"
     }
   ]
 }
