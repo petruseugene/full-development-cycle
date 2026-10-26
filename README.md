@@ -8,6 +8,8 @@ Pipeline: **discovery → spec → plan → parallel implementation → review a
 
 On tracks `full` and `lite`, product decisions that spec-writer cannot settle are asked in one batched multiple-choice step before planning.
 
+Paths to plugin internals in this README (`scripts/`, `skills/`, `hooks/`, `commands/`, `dashboard/`) are relative to `plugin/`, which is the plugin root (`${CLAUDE_PLUGIN_ROOT}`); `tests/` and `docs/` sit at the repository root.
+
 ## Features
 
 - **Orchestrator** with three tracks (`full`, `lite`, `quick`) plus bugfix and hotfix flows.
@@ -56,7 +58,7 @@ A head-to-head run of OpenSpec, BMAD, Spec Kit and Superpowers on October 13, 20
 - Node.js 22 or newer (the state CLI)
 - bash
 - [`gh`](https://cli.github.com/), authenticated, for opening and merging PRs
-- For the dashboard only: `npm install` inside `dashboard/`
+- For the dashboard only: `npm ci --omit=dev` inside `dashboard/` (the dashboard launcher runs it for you on first start)
 
 ## What dev-cycle runs and sends
 
@@ -65,7 +67,7 @@ A head-to-head run of OpenSpec, BMAD, Spec Kit and Superpowers on October 13, 20
 - **Codebase map:** `map` runs `git ls-files` / `git rev-parse` locally, reads only tracked `package.json` / `pnpm-workspace.yaml`, and has no network access.
 - **Project profile commands:** `commands`, `extra_gates`, `post_merge` and `recipes` run only commands the project owner wrote in `.dev-cycle/project.json`. Post-merge steps with `confirm: true` need explicit confirmation.
 - **Skills:** may run your project's test and lint tools, Playwright or simulators for visual tests, and `npx -y @axe-core/cli@4.13.0` for accessibility audits (downloads that pinned version from npm).
-- **Dashboard (optional, local on 127.0.0.1:3737):** installs its npm dependencies automatically on first start. It calls `api.anthropic.com` (a `GET /v1/models` key check and Claude Agent SDK sessions) only when `DASHBOARD_AGENT` is not `off` and a key is set (auto mode validates the key with `GET /v1/models`), and reads `ANTHROPIC_API_KEY` from the environment or `dashboard/.env.local` for that. `ANTHROPIC_BASE_URL` overrides the host. The dashboard page loads web fonts from `fonts.googleapis.com` / `fonts.gstatic.com` in your browser.
+- **Dashboard (optional, local on 127.0.0.1:3737):** on first start it installs its npm dependencies with `npm ci --omit=dev` (production dependencies from the committed lockfile, which also runs their package install scripts, for example Next.js SWC binaries). It calls `api.anthropic.com` (a `GET /v1/models` key check and Claude Agent SDK sessions) only when `DASHBOARD_AGENT` is not `off` and a key is set (auto mode validates the key with `GET /v1/models`), and reads `ANTHROPIC_API_KEY` from the environment or `dashboard/.env.local` for that. `ANTHROPIC_BASE_URL` overrides the host. The dashboard page loads web fonts from `fonts.googleapis.com` / `fonts.gstatic.com` in your browser.
 - **Web access:** discovery and subagents may use Claude Code's web search and fetch tools.
 - **Telemetry:** dev-cycle adds no telemetry of its own, and the dashboard sets `NEXT_TELEMETRY_DISABLED=1` to turn off Next.js telemetry. Claude Code and the Agent SDK follow their own settings.
 
@@ -312,6 +314,7 @@ Exit codes: `0` OK or PASSED, `1` FAILED, `2` usage, validation or parse error. 
 | `init [--preset web\|expo] [--force]` | Write a starter `.dev-cycle/project.json` from `package.json` script names. Never overwrites without `--force`; never runs scripts |
 | `review snapshot [--cycle n]` / `review diff [--since-cycle n] [--name-only]` | Incremental review: snapshot the working tree as a tree id (temporary index, real index untouched), then diff only what changed since a cycle |
 | `profile validate` / `profile show [--json]` | Validate or print the project profile |
+| `profile snapshot --feature <f>` | Re-read `.dev-cycle/project.json` into `feature.json.profile` (after the profile changed mid-feature) |
 | `git branch [<name>] [--base <ref>]` | Create the feature or fix branch |
 | `git commit [--subject s] [--body b] [--scope s] [--trailer "Key: value"]... [--closes n,m] [--include-untracked]` | Stage the feature's changes (see `profile.git`) and commit with a conventional message |
 | `git push` | Push the branch |
@@ -336,7 +339,7 @@ It is a guardrail against accidents, not a security boundary: it uses a hand-wri
 
 ## Dashboard
 
-`/dev-cycle:dashboard` starts a local Next.js dashboard (http://127.0.0.1:3737) that watches `docs/features/` of the current project: a task board, per-feature detail, token and model spend, and an agent chat drawer. Install its dependencies once with `npm install` inside `dashboard/`. The sidebar has a "Report" link to the generated HTML report (see `/dev-cycle:report`). See `dashboard/README.md` for details.
+`/dev-cycle:dashboard` starts a local Next.js dashboard (http://127.0.0.1:3737) that watches `docs/features/` of the current project: a task board, per-feature detail, token and model spend, and an agent chat drawer. Its dependencies install on first start with `npm ci --omit=dev` inside `dashboard/`. The sidebar has a "Report" link to the generated HTML report (see `/dev-cycle:report`). See `dashboard/README.md` for details.
 
 ![Dashboard board filtered to completed features: KPI strip, status columns and merged tasks](https://raw.githubusercontent.com/petruseugene/full-development-cycle/main/docs/assets/dashboard-board.png)
 
@@ -347,23 +350,27 @@ Chat is billed at Anthropic API rates (Claude Agent SDK). Control it with `DASHB
 ## Repository layout
 
 ```
-.claude-plugin/   plugin.json, marketplace.json
-commands/         /dev-cycle:orchestrator, :architector, :dashboard, :report
-hooks/            SessionStart and PreToolUse (git guard) hooks
-scripts/          dev-cycle.mjs (state CLI), git-guard.mjs, lib/, test/, lint-skills.sh,
-                  run-dashboard.sh, session-start.sh
-skills/           one directory per skill, plus playbook and using-dev-cycle
-dashboard/        Next.js dashboard
-docs/             design docs and artifacts of this repository's own development
+.claude-plugin/   marketplace.json (source ./plugin)
+plugin/             the shipped plugin (only runtime files)
+  .claude-plugin/   plugin.json, icon
+  commands/         /dev-cycle:orchestrator, :architector, :dashboard, :report
+  hooks/            SessionStart and PreToolUse (git guard) hooks
+  scripts/          dev-cycle.mjs (state CLI), git-guard.mjs, lib/, run-dashboard.sh,
+                    session-start.sh
+  skills/           one directory per skill, plus playbook and using-dev-cycle
+  dashboard/        Next.js dashboard
+tests/              CLI tests and lint-skills.sh (not shipped)
+docs/               design docs and artifacts of this repository's own development
 ```
 
 ## Development
 
 ```bash
-node --test scripts/test/                          # CLI tests
-bash scripts/lint-skills.sh                        # structural lint of SKILL.md files
-claude plugin validate .                           # manifest validation
-cd dashboard && npm test && npx tsc --noEmit       # dashboard tests (vitest) and typecheck
+node --test tests/                                 # CLI tests
+bash tests/lint-skills.sh                          # structural lint of SKILL.md files
+claude plugin validate .                           # marketplace manifest validation
+claude plugin validate ./plugin                    # plugin manifest validation
+cd plugin/dashboard && npm test && npx tsc --noEmit  # dashboard tests (vitest) and typecheck
 ```
 
 This repository's own `docs/features/` folders are local-only (git-ignored, never published); the CLI skips staging an ignored feature folder.

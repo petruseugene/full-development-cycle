@@ -1,8 +1,8 @@
 {
   "commands": {
-    "lint": "bash scripts/lint-skills.sh",
-    "typecheck": "cd dashboard && npx tsc --noEmit",
-    "test": "node --test --test-reporter=dot scripts/test/"
+    "lint": "bash tests/lint-skills.sh",
+    "typecheck": "cd plugin/dashboard && npx tsc --noEmit",
+    "test": "node --test --test-reporter=dot tests/"
   },
   "worktrees": {
     "mode": "audit"

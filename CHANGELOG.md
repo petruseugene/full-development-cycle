@@ -3,6 +3,23 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.14] — 2026-10-26
+
+### Added
+
+- `profile snapshot --feature <f>` refreshes `feature.json.profile` after `project.json` changes
+
+### Changed
+
+- The shippable plugin moved into the `plugin/` subfolder and the marketplace entry now uses `"source": "./plugin"`, so only runtime files ship (fewer than 512 files, no binaries except the icon). Tests moved to the root `tests/` and `lint-skills.sh` to `tests/lint-skills.sh`
+- `ship --release` auto-detects the marketplace manifest instead of assuming its location
+- The dashboard installs with `npm ci --omit=dev` (lockfile only, production dependencies)
+
+### Fixed
+
+- The dashboard's Agent SDK cwd (`resolveSdkCwd`) now honours `DASHBOARD_FEATURES_DIR`
+- `plugin.json` now lists the `report` command (`report.md`)
+
 ## [1.7.13] — 2026-10-24
 
 ### Fixed
