@@ -22,7 +22,7 @@ function addFeature(dir, name, fj) {
   fs.writeFileSync(path.join(d, 'feature.json'), typeof fj === 'string' ? fj : JSON.stringify(fj));
   return d;
 }
-const run = (input) => spawnSync('bash', [HOOK], { encoding: 'utf8', input });
+const run = (input) => spawnSync('bash', [HOOK], { encoding: 'utf8', input, env: { ...process.env, CLAUDE_PLUGIN_ROOT: REPO } });
 const ctxOf = (r) => {
   assert.equal(r.status, 0, r.stderr);
   return JSON.parse(r.stdout).hookSpecificOutput.additionalContext;

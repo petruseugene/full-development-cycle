@@ -3,6 +3,12 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.15] — 2026-10-27
+
+### Fixed
+
+- fix(hooks): SessionStart hook uses literal plugin paths, no inline python
+
 ## [1.7.14] — 2026-10-26
 
 ### Added

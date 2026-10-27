@@ -356,7 +356,7 @@ plugin/             the shipped plugin (only runtime files)
   commands/         /dev-cycle:orchestrator, :architector, :dashboard, :report
   hooks/            SessionStart and PreToolUse (git guard) hooks
   scripts/          dev-cycle.mjs (state CLI), git-guard.mjs, lib/, run-dashboard.sh,
-                    session-start.sh
+                    session-start.sh, session-start.py
   skills/           one directory per skill, plus playbook and using-dev-cycle
   dashboard/        Next.js dashboard
 tests/              CLI tests and lint-skills.sh (not shipped)
