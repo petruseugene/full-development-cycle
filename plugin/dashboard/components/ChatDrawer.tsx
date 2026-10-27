@@ -63,7 +63,7 @@ const FOCUSABLE_SELECTOR =
 // resolve from the `/` route (code-reviewer F5); pointing at the canonical
 // GitHub copy avoids relying on Next.js statically serving a Markdown file.
 const README_API_KEY_URL =
-  'https://github.com/petruseugene/full-development-cycle/blob/main/dashboard/README.md#anthropic-api-key';
+  'https://github.com/petruseugene/full-development-cycle/blob/main/plugin/dashboard/README.md#anthropic-api-key';
 
 type SessionState =
   | { kind: 'no_session' }
