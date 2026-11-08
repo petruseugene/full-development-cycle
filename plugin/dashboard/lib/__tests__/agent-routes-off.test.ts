@@ -50,7 +50,6 @@ describe('agent routes when mode=off (AC3)', () => {
   beforeAll(() => {
     __resetAgentStatusForTests();
     process.env.DASHBOARD_AGENT = 'off';
-    process.env.ANTHROPIC_API_KEY = 'sk-test';
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
   afterAll(() => {
@@ -83,11 +82,10 @@ describe('agent routes when mode=off (AC3)', () => {
   });
 });
 
-describe('start route when mode=on without a key (AC6)', () => {
-  it('does not return the ANTHROPIC_API_KEY not set 500', async () => {
+describe('start route when mode=on (AC6)', () => {
+  it('starts a session without reading any credential', async () => {
     __resetAgentStatusForTests();
     process.env.DASHBOARD_AGENT = 'on';
-    delete process.env.ANTHROPIC_API_KEY;
     const { POST } = await import('@/app/api/agent/[featureId]/start/route');
     const res = await POST(req('POST'), { params: { featureId: 'feat-1' } });
     expect(res.status).toBe(200);

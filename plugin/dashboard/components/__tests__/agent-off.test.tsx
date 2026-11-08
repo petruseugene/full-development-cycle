@@ -175,7 +175,7 @@ describe('agent enabled (AC9)', () => {
 
   it('shell mounts the ChatDrawer', async () => {
     await renderAsync(
-      <ShellClient agent={{ enabled: true, mode: 'on', reason: 'forced-on' }}>
+      <ShellClient agent={{ enabled: true, mode: 'on', reason: 'on-by-config' }}>
         <div />
       </ShellClient>,
     );

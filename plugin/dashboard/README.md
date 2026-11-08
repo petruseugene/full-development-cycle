@@ -48,28 +48,18 @@ The parsers degrade gracefully — missing files just mean less detail, not a cr
 
 ## Agent SDK setup
 
-The chat drawer drives an embedded [`@anthropic-ai/claude-agent-sdk`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) session per feature, so the dashboard needs an Anthropic API key before it can start a chat. Without one the drawer renders the "Set `ANTHROPIC_API_KEY` to start a chat" alert and `POST /api/agent/[featureId]/start` returns `500 { error: 'ANTHROPIC_API_KEY not set' }`.
-
-Set the key either in your shell or in `plugin/dashboard/.env.local`, then restart `npm run dev`:
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-…
-cd plugin/dashboard
-npm run dev
-```
-
-`plugin/dashboard/.env.local` is gitignored by Next.js by default — prefer it over your shell rc file if you want the key scoped to this project. Whichever path you choose, you must restart the dev server after changing the value; the SDK reads the variable at session-start time.
+The chat drawer drives an embedded [`@anthropic-ai/claude-agent-sdk`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) session per feature. The dashboard does not read, validate or forward any credential: the SDK authenticates on its own when a session starts (your Claude Code login, or the SDK's standard environment). If authentication fails, the chat shows an "Authentication failed" error card with Retry.
 
 ### Agent mode
 
-Chat is billed at Anthropic API rates (Claude Agent SDK). Control it with `DASHBOARD_AGENT=auto|on|off`: in `auto` (the default) chat is hidden without a valid `ANTHROPIC_API_KEY`, and every `/api/agent/**` route returns 404. Force it with `/dev-cycle:dashboard --agent=on`, `--agent=off` or `--no-agent`, or set `DASHBOARD_AGENT` in `plugin/dashboard/.env.local`. Restart the dashboard after changing the env, the flag or the key. `on` skips the key check, so a Claude Code login can be used.
+Chat is opt-in and billed to your Claude account (Claude Agent SDK). It is off by default, and every `/api/agent/**` route returns 404. Turn it on with `/dev-cycle:dashboard --agent=on` (or `DASHBOARD_AGENT=on` in `plugin/dashboard/.env.local`); `--agent=off` / `--no-agent` turn it off, and the legacy value `auto` means off. Restart the dashboard after changing the env or the flag. The dashboard never reads or forwards credentials itself: the Agent SDK uses your existing Claude Code login or its own standard environment.
 
 ```bash
-DASHBOARD_AGENT=off npm run dev                 # hide chat
+DASHBOARD_AGENT=on npm run dev                  # show chat
 bash plugin/scripts/run-dashboard.sh --agent=on /path/to/project
 ```
 
-This section is the canonical setup target (`#anthropic-api-key`); the legacy anchor `#agent-sdk-setup` resolves to the same content so older deep-links keep working.
+This section is the canonical setup target (`#anthropic-api-key`, kept for old links); the legacy anchor `#agent-sdk-setup` resolves to the same content so older deep-links keep working.
 
 ### Trust boundary
 

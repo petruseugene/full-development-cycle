@@ -109,7 +109,7 @@ describe('session-manager SDK error mapping', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatchObject({
       code: 'authentication_failed',
-      message: 'API key rejected — check ANTHROPIC_API_KEY.',
+      message: 'Authentication failed — check your Claude credentials, then Retry.',
     });
   });
 

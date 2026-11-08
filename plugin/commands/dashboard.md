@@ -31,9 +31,10 @@ arguments (the last positional path wins), e.g. `/dev-cycle:dashboard ~/code/app
 Residual limitations: a project path containing spaces cannot be passed (words are split
 on whitespace), and an argument line that is exactly `DEV_CYCLE_ARGS_EOF` would end the heredoc.
 
-Optional arguments: `--agent=on|off|auto` sets the chat agent mode (default `auto`: chat
-is shown only when `ANTHROPIC_API_KEY` is set and valid) and `--no-agent` is an alias for
-`--agent=off`, e.g. `/dev-cycle:dashboard --agent=off`.
+Optional arguments: `--agent=on|off` sets the chat agent mode (default off; `auto` is a
+legacy alias for off) and `--no-agent` is an alias for `--agent=off`, e.g.
+`/dev-cycle:dashboard --agent=on`. The chat uses the Claude Agent SDK, which authenticates
+on its own; the dashboard never reads credentials.
 
 Then tell the user the dashboard is available at http://127.0.0.1:3737 and that
 it is watching `docs/features/` of this project.

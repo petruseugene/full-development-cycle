@@ -1334,7 +1334,7 @@ class SessionManager {
       message =
         'API credit balance too low — top up at https://platform.claude.com/settings/billing, then Retry.';
     } else if (c === 'authentication_failed') {
-      message = 'API key rejected — check ANTHROPIC_API_KEY.';
+      message = 'Authentication failed — check your Claude credentials, then Retry.';
     } else {
       message = sanitizeErrorDetail(text || code);
     }

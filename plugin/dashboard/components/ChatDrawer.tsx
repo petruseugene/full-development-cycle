@@ -58,17 +58,9 @@ const TOP_OFFSET = 48;
 const FOCUSABLE_SELECTOR =
   'a[href], area[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex]:not([tabindex="-1"]), [contenteditable=true]';
 
-// GitHub URL for the README anchor referenced by the AC16 API-key alert.
-// The previous `../../README.md#anthropic-api-key` relative href didn't
-// resolve from the `/` route (code-reviewer F5); pointing at the canonical
-// GitHub copy avoids relying on Next.js statically serving a Markdown file.
-const README_API_KEY_URL =
-  'https://github.com/petruseugene/full-development-cycle/blob/main/plugin/dashboard/README.md#anthropic-api-key';
-
 type SessionState =
   | { kind: 'no_session' }
   | { kind: 'starting' }
-  | { kind: 'api_key_missing' }
   | { kind: 'errored'; message: string };
 
 /** Session-status values shown in the header chip (AC13). */
@@ -187,11 +179,7 @@ function useSessionStatus(featureId: string | null): {
 /** Header status chip class + label per AC13. */
 function statusChipFor(
   status: SessionStatus,
-  apiKeyMissing: boolean,
 ): { className: string; label: string; style?: CSSProperties } {
-  if (apiKeyMissing) {
-    return { className: 'chip st-errored', label: 'Config needed' };
-  }
   switch (status) {
     case 'running':
       return { className: 'chip st-running', label: 'Running' };
@@ -662,17 +650,12 @@ export function ChatDrawer() {
         setSessionStatus('running');
         return;
       }
-      // Try to parse the SDK error body. R18 / AC8 / AC16 hinge on the
-      // exact body shape `{ error: 'ANTHROPIC_API_KEY not set' }`.
+      // Try to parse the error body for a readable message.
       let body: { error?: string; message?: string } | null = null;
       try {
         body = (await res.json()) as { error?: string; message?: string };
       } catch {
         body = null;
-      }
-      if (res.status === 500 && body?.error === 'ANTHROPIC_API_KEY not set') {
-        setSessionState({ kind: 'api_key_missing' });
-        return;
       }
       setSessionState({
         kind: 'errored',
@@ -688,8 +671,7 @@ export function ChatDrawer() {
 
   if (!chatDrawerOpen) return null;
 
-  const isApiKeyMissing = sessionState.kind === 'api_key_missing';
-  const statusChip = statusChipFor(sessionStatus, isApiKeyMissing);
+  const statusChip = statusChipFor(sessionStatus);
 
   return (
     <aside
@@ -855,14 +837,9 @@ export function ChatDrawer() {
           id="chat-drawer-panel-chat"
           role="tabpanel"
           aria-labelledby="chat-drawer-tab-chat"
-          aria-label={
-            isApiKeyMissing ? 'Chat — API key missing' : undefined
-          }
           className="flex-1 overflow-auto"
         >
-          {isApiKeyMissing ? (
-            <ApiKeyMissingAlert />
-          ) : sessionStatus === 'no_session' ? (
+          {sessionStatus === 'no_session' ? (
             <EmptyState
               slug={slug}
               starting={sessionState.kind === 'starting'}
@@ -1025,75 +1002,3 @@ function EmptyState({
   );
 }
 
-function ApiKeyMissingAlert() {
-  // AC16: `.alert` with `role="alert"` (error-bg), title
-  // `Set ANTHROPIC_API_KEY to start a chat`, three-command code block,
-  // link to the canonical README anchor on GitHub (code-reviewer F5: the
-  // prior `../../README.md#anthropic-api-key` relative href failed to
-  // resolve from the `/` route since Next.js doesn't statically serve the
-  // repo README). The Start button is intentionally absent per AC8.
-  return (
-    <div className="p-6">
-      <div
-        className="alert flex items-start gap-3 p-4"
-        role="alert"
-        style={{
-          background: '#FEF2F2',
-          border: '1px solid #FECACA',
-          borderRadius: 8,
-          color: '#7F1D1D',
-        }}
-      >
-        <span
-          aria-hidden="true"
-          className="serif"
-          style={{
-            fontSize: 22,
-            lineHeight: 1,
-            color: '#B91C1C',
-            fontWeight: 700,
-          }}
-        >
-          !
-        </span>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-[14px] font-semibold mb-1">
-            Set <code className="mono">ANTHROPIC_API_KEY</code> to start a chat
-          </h4>
-          <p className="text-[12.5px] leading-relaxed">
-            The dashboard reads the key from your shell environment when
-            launching an Agent SDK session.
-          </p>
-          <p className="text-[11.5px] mt-2" style={{ color: '#7F1D1D' }}>
-            In your terminal:
-          </p>
-          <pre
-            className="mono text-[12px] mt-1 p-2 overflow-auto"
-            style={{
-              background: '#fff',
-              border: '1px solid #FECACA',
-              borderRadius: 6,
-              color: '#0F172A',
-              whiteSpace: 'pre',
-            }}
-          >
-{`export ANTHROPIC_API_KEY=sk-ant-…
-cd dashboard
-npm run dev`}
-          </pre>
-          <p className="text-[12.5px] mt-3">
-            <a
-              href={README_API_KEY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-              style={{ color: '#B91C1C', textDecorationStyle: 'wavy' }}
-            >
-              Read the dashboard README → Setup section
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
