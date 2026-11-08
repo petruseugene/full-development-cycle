@@ -4,9 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET } from '@/app/api/agent-status/route';
 import { __resetAgentStatusForTests } from '@/lib/agent-mode';
 
-// Built at runtime so no key-like literal ships in the repo.
-const FAKE_KEY = ['sk', 'ant', 'test', 'SECRET'].join('-');
-
 const saved = { ...process.env };
 let logs: string[] = [];
 
@@ -19,7 +16,6 @@ beforeEach(() => {
     });
   }
   delete process.env.DASHBOARD_AGENT;
-  delete process.env.ANTHROPIC_API_KEY;
 });
 afterEach(() => {
   process.env = { ...saved };
@@ -36,22 +32,16 @@ async function call() {
 
 describe('GET /api/agent-status (AC5)', () => {
   const cases: Array<[string, Record<string, string>, boolean]> = [
-    ['off', { DASHBOARD_AGENT: 'off', ANTHROPIC_API_KEY: FAKE_KEY }, false],
+    ['off', { DASHBOARD_AGENT: 'off' }, false],
     ['on', { DASHBOARD_AGENT: 'on' }, true],
-    ['auto without key', {}, false],
-    ['auto with key', { ANTHROPIC_API_KEY: FAKE_KEY }, true],
+    ['default', {}, false],
+    ['legacy auto', { DASHBOARD_AGENT: 'auto' }, false],
   ];
-  it.each(cases)('%s: 200, exact key set, no secret', async (_n, env, enabled) => {
+  it.each(cases)('%s: 200, exact key set', async (_n, env, enabled) => {
     Object.assign(process.env, env);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ status: 200 }) as Response),
-    );
-    const { status, text, body } = await call();
+    const { status, body } = await call();
     expect(status).toBe(200);
     expect(Object.keys(body).sort()).toEqual(['enabled', 'mode', 'reason']);
     expect(body.enabled).toBe(enabled);
-    expect(text).not.toContain('SECRET');
-    expect(logs.join('\n')).not.toContain('SECRET');
   });
 });

@@ -6,8 +6,8 @@ import { assertSameOrigin } from '@/lib/csrf';
  *
  * Flow:
  *   1. Loopback guard (R15) — non-loopback Host → 404.
- *   2. `ANTHROPIC_API_KEY` must be set; missing → 500 with a stable error
- *      string the empty-state UI keys off (AC8 / AC16).
+ *   2. Agent gate — chat off (default) → 404. Authentication is left to
+ *      the Agent SDK; the route never reads credentials.
  *   3. If a live (non-killed) session already exists for `featureId`,
  *      return 409 `{ error: 'session_already_exists' }` (R1 invariant —
  *      one live session per feature).
@@ -27,7 +27,7 @@ import { NextResponse } from 'next/server';
 
 import type { SessionMeta, SessionRecord } from '@/lib/agent/types';
 
-import { agentGate, getAgentStatus } from '@/lib/agent-mode';
+import { agentGate } from '@/lib/agent-mode';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -71,17 +71,6 @@ export async function POST(
     return NextResponse.json(
       { error: 'invalid_feature_id' },
       { status: 400 },
-    );
-  }
-
-  // Mode `on` skips the key check so a Claude Code login can be used.
-  const { mode } = await getAgentStatus();
-  if (mode !== 'on' && !process.env.ANTHROPIC_API_KEY) {
-    // Stable error string — `ChatDrawer` (Task 10) deep-links to the README
-    // anchor on exactly this body.
-    return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY not set' },
-      { status: 500 },
     );
   }
 

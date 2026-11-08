@@ -48,12 +48,13 @@ describe('R6/R7 gate structure', () => {
 
 describe('AC13 docs', () => {
   for (const f of [join(repo, 'README.md'), join(root, 'dashboard/README.md')]) {
-    it(`${f} documents billing, flags and hidden-without-key`, () => {
+    it(`${f} documents billing, flags and off-by-default`, () => {
       const s = read(f);
-      expect(s).toContain('API rates');
+      expect(s).toContain('billed to your Claude account');
       expect(s).toContain('DASHBOARD_AGENT');
       expect(s).toContain('--agent=');
-      expect(s).toMatch(/hidden[^.]*ANTHROPIC_API_KEY|ANTHROPIC_API_KEY[^.]*hidden/i);
+      expect(s).toMatch(/off by default/i);
+      expect(s).toContain('never reads or forwards credentials');
     });
   }
   it('.env.example has DASHBOARD_AGENT', () => {
@@ -71,7 +72,7 @@ describe('AC13 docs', () => {
     const lines = s.split('\n').filter((l) => l.trim().startsWith('bash ') && l.includes('run-dashboard.sh'));
     expect(lines.length).toBeGreaterThan(0);
     for (const l of lines) expect(l).toContain('"${DASH_ARGS[@]}"');
-    expect(s).toContain('--agent=on|off|auto');
+    expect(s).toContain('--agent=on|off');
     expect(s).toContain('--no-agent');
   });
   it('CHANGELOG records the DASHBOARD_AGENT entry (Added) and credit-balance fix (Fixed) in some section', () => {

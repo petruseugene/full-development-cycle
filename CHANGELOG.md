@@ -3,6 +3,17 @@
 All notable changes to the dev-cycle plugin are documented here.
 Format follows Keep a Changelog; versioning follows SemVer.
 
+## [1.7.17] — 2026-11-09
+
+### Changed
+
+- Dashboard chat is now opt-in (`--agent=on` / `DASHBOARD_AGENT=on`); the default and the legacy `auto` value mean off.
+- The dashboard no longer reads, validates or forwards any credential: the `GET /v1/models` key check, the start-route key check and the "Set API key" alert are gone; the Claude Agent SDK authenticates on its own.
+
+### Fixed
+
+- recipes.md: the grammar note no longer spells out a package-runner command (plugin directory download-and-run warning).
+
 ## [1.7.16] — 2026-10-27
 
 ### Changed

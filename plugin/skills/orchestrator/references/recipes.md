@@ -18,7 +18,7 @@ Checked by `profile validate` and `recipe run`; a best-effort lint, not a sandbo
 - With placeholders, the later words of a plain program are checked for shells/runners too (wrappers like `caffeinate`, `xcrun`; `.`/`source`/`exec`/`eval` count only as the program, so `git add . {p}` is fine).
 - Between an interpreter (`node`, `python3`, `perl`, `npx`, `uv`, `sed`, `expect`, …) and its script word there is no code flag (`-e`, `-c`, `-p`, `-r`, `--eval`, …) and no placeholder; the script word is not an `exec`/`install`/`tool`/`task`-style subcommand; for `uv`/`pipx`/`bun`/`deno`, `run` needs a literal script path (`uv run scripts/gen.py {p}`). Words after the script are its own args (`python3 tools/gen.py -p {k}` is fine).
 - `npm`/`pnpm`/`yarn` take no placeholders (script args go through a shell).
-- Programs that treat their own arguments as code, a program path or a package (`git -c {p}`, `make --eval={p}`, `npx tsx {p}`) are the recipe author's responsibility.
+- Programs that treat their own arguments as code, a program path or a package name (`git -c {p}`, `make --eval={p}`, a package runner given a placeholder) are the recipe author's responsibility.
 - A param may set `allow_dash: true` (values starting with `-` are otherwise rejected); values are at most 1024 chars; a `pattern` is a string of at most 256 chars without nested quantifiers.
 
 Example: `node scripts/tts.mjs --only {keys} --max-requests {n}`.

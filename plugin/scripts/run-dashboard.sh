@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Starts the dev-cycle dashboard against a target project's docs/features.
-# Usage: run-dashboard.sh [--agent=auto|on|off] [--no-agent] [project-root]
+# Usage: run-dashboard.sh [--agent=on|off] [--no-agent] [project-root]  (auto = legacy alias for off)
 #   project-root defaults to the current working directory; flags may appear anywhere.
 #   If several positional paths are given, the LAST one wins. Every argument is treated as
 #   data (never eval'd or word-split); a leading "--" ends flag parsing.
